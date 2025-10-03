@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>WhisPTT Mockup</title>
+  <style>
+    :root {
+      --border: #111;
+      --screen-bg: #f4f4f4;
+      --muted: #8a8a8a;
+      --success: #2f855a;
+      --error: #b83232;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #d8d8d8;
+      color: #111;
+    }
+
+    .app-shell {
+      width: 360px;
+      height: 720px;
+      background: #f9f9f9;
+      border: 2px solid var(--border);
+      border-radius: 28px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .top-banner {
+      padding: 1.25rem 1rem;
+      text-align: center;
+      font-size: 1.85rem;
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+      letter-spacing: 0.02em;
+    }
+
+    .screen {
+      flex: 1;
+      padding: 1.5rem 1.75rem 3.25rem;
+      display: flex;
+      flex-direction: column;
+      background: var(--screen-bg);
+      position: relative;
+    }
+
+    .transcription-panel {
+      position: relative;
+      flex: 1;
+      border: 2px solid var(--border);
+      border-radius: 22px;
+      background: #fdfdfd;
+      padding: 2rem 1.5rem 3.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .transcription-placeholder {
+      margin: 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+
+    .transcription-log {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .transcription-entry {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 0.75rem 1rem;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .transcription-entry time {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .transcription-entry p {
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .tag {
+      align-self: flex-start;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .mic-button {
+      position: absolute;
+      left: 50%;
+      bottom: -46px;
+      transform: translateX(-50%);
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: #ffffff;
+      font-size: 2.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      touch-action: none;
+    }
+
+    .mic-button--active {
+      background: #222;
+      color: #ffffff;
+      transform: translateX(-50%) scale(0.96);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 2px solid var(--border);
+      background: #f9f9f9;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.75rem 0;
+      border: none;
+      background: transparent;
+      font-size: 0.85rem;
+      color: inherit;
+      border-right: 2px solid var(--border);
+      cursor: pointer;
+    }
+
+    .nav-item:last-child {
+      border-right: none;
+    }
+
+    .icon {
+      font-size: 1.45rem;
+      line-height: 1;
+    }
+
+    .status-text {
+      position: absolute;
+      left: 50%;
+      bottom: 1.4rem;
+      transform: translateX(-50%);
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      width: 90%;
+    }
+
+    .status-text.success {
+      color: var(--success);
+    }
+
+    .status-text.error {
+      color: var(--error);
+    }
+
+    .nav-item:focus-visible,
+    .mic-button:focus-visible {
+      outline: 3px solid #4e8af5;
+      outline-offset: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-banner">WhisPTT</header>
+
+    <main class="screen">
+      <section class="transcription-panel" aria-label="Transcript window">
+        <p class="transcription-placeholder" id="transcription-placeholder">Transcription appears here</p>
+        <div class="transcription-log" id="transcription-log" aria-live="polite"></div>
+        <button class="mic-button" type="button" id="mic-button" aria-label="Hold to record">&#127908;</button>
+        <p class="status-text" id="status-text">Hold the button to record</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="nav-item" type="button">
+        <span class="icon">&#128100;</span>
+        <span>Profile</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="icon">&#128172;</span>
+        <span>Chats</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="icon">&#128187;</span>
+        <span>Agents</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="icon">&#128233;</span>
+        <span>DMs</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const API_BASE = "http://127.0.0.1:8000";
+      const micButton = document.getElementById("mic-button");
+      const statusText = document.getElementById("status-text");
+      const log = document.getElementById("transcription-log");
+      const placeholder = document.getElementById("transcription-placeholder");
+
+      let isRecording = false;
+      let spaceHeld = false;
+
+      function setStatus(message, tone) {
+        statusText.textContent = message;
+        statusText.classList.remove("success", "error");
+        if (tone) {
+          statusText.classList.add(tone);
+        }
+      }
+
+      function ensureHistoryVisible() {
+        if (!placeholder) {
+          return;
+        }
+        placeholder.style.display = log.childElementCount ? "none" : "block";
+      }
+
+      function renderEntry(entry) {
+        const article = document.createElement("article");
+        article.className = "transcription-entry";
+
+        const when = document.createElement("time");
+        const time = new Date(entry.timestamp || Date.now());
+        when.textContent = time.toLocaleTimeString();
+
+        const text = document.createElement("p");
+        text.textContent = entry.transcript;
+
+        article.appendChild(when);
+        article.appendChild(text);
+
+        if (entry.mocked) {
+          const badge = document.createElement("span");
+          badge.className = "tag";
+          badge.textContent = "Mock";
+          article.appendChild(badge);
+        }
+
+        log.prepend(article);
+        ensureHistoryVisible();
+      }
+
+      async function startRecording() {
+        if (isRecording) {
+          return;
+        }
+        isRecording = true;
+        micButton.classList.add("mic-button--active");
+        setStatus("Recording... release to stop");
+
+        try {
+          const response = await fetch(`${API_BASE}/api/record/start`, { method: "POST" });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to start recording");
+          }
+        } catch (error) {
+          console.error(error);
+          setStatus(error.message || "Could not start recording", "error");
+          micButton.classList.remove("mic-button--active");
+          isRecording = false;
+        }
+      }
+
+      async function stopRecording() {
+        if (!isRecording) {
+          return;
+        }
+        isRecording = false;
+        micButton.classList.remove("mic-button--active");
+        setStatus("Processing transcript...");
+
+        try {
+          const response = await fetch(`${API_BASE}/api/record/stop`, { method: "POST" });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Recording stop failed");
+          }
+          renderEntry(data);
+          setStatus("Ready for the next snippet", "success");
+        } catch (error) {
+          console.error(error);
+          setStatus(error.message || "Could not stop recording", "error");
+        }
+      }
+
+      micButton.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        micButton.setPointerCapture(event.pointerId);
+        startRecording();
+      });
+
+      micButton.addEventListener("pointerup", function (event) {
+        event.preventDefault();
+        micButton.releasePointerCapture(event.pointerId);
+        stopRecording();
+      });
+
+      micButton.addEventListener("pointerleave", function () {
+        if (isRecording) {
+          stopRecording();
+        }
+      });
+
+      window.addEventListener("keydown", function (event) {
+        if (event.code === "Space" && !spaceHeld) {
+          event.preventDefault();
+          spaceHeld = true;
+          startRecording();
+        }
+      });
+
+      window.addEventListener("keyup", function (event) {
+        if (event.code === "Space" && spaceHeld) {
+          event.preventDefault();
+          spaceHeld = false;
+          stopRecording();
+        }
+      });
+
+      async function hydrateHistory() {
+        try {
+          const response = await fetch(`${API_BASE}/api/status`);
+          if (!response.ok) {
+            return;
+          }
+          const data = await response.json();
+          (data.history || []).slice().reverse().forEach(renderEntry);
+          ensureHistoryVisible();
+        } catch (error) {
+          console.warn("Status check failed", error);
+        }
+      }
+
+      hydrateHistory();
+      ensureHistoryVisible();
+    })();
+  </script>
+</body>
+</html>
