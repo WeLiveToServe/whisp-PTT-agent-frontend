@@ -69,6 +69,8 @@ class RecorderService:
         self._thread: Optional[threading.Thread] = None
         self._result_queue: "queue.Queue[dict]" = queue.Queue()
         self._virtual_keys = VirtualKeypad()
+        self._last_result: Optional[dict] = None
+        self._last_error: Optional[str] = None
 
     def start(self) -> None:
         with self._lock:
@@ -76,6 +78,8 @@ class RecorderService:
                 raise RecorderBusyError("Recorder already running")
 
             self._result_queue = queue.Queue()
+            self._last_result = None
+            self._last_error = None
             self._virtual_keys.reset()
 
             def worker() -> None:
@@ -89,21 +93,56 @@ class RecorderService:
             self._thread = threading.Thread(target=worker, daemon=True)
             self._thread.start()
 
-            # engage recording state once the thread is live
-            time.sleep(0.05)
-            self._virtual_keys.set_space(True)
+        # Give PortAudio a moment to initialise and fail fast if needed
+        time.sleep(0.1)
+
+        with self._lock:
+            thread = self._thread
+            if thread and thread.is_alive():
+                self._virtual_keys.set_space(True)
+                return
+
+        try:
+            result = self._result_queue.get_nowait()
+        except queue.Empty as exc:
+            raise RuntimeError("Recorder failed to start") from exc
+
+        if "error" in result:
+            with self._lock:
+                self._last_error = result["error"]
+                self._thread = None
+            raise RuntimeError(result["error"])
+
+        with self._lock:
+            self._last_result = result
+            self._thread = None
 
     def stop(self) -> dict:
         with self._lock:
-            if not self._thread or not self._thread.is_alive():
-                raise RecorderIdleError("Recorder is not running")
+            thread = self._thread
+            cached_result = self._last_result
+            cached_error = self._last_error
 
-            self._virtual_keys.set_space(False)
-            self._virtual_keys.tap_backspace()
+        if not thread:
+            if cached_error:
+                with self._lock:
+                    self._last_error = None
+                raise RuntimeError(cached_error)
+            if cached_result:
+                with self._lock:
+                    self._last_result = None
+                return cached_result
+            raise RecorderIdleError("Recorder is not running")
 
-        self._thread.join(timeout=10)
-        if self._thread.is_alive():
-            raise RuntimeError("Recorder did not shut down cleanly")
+        if thread.is_alive():
+            with self._lock:
+                self._virtual_keys.set_space(False)
+                self._virtual_keys.tap_backspace()
+            thread.join(timeout=10)
+            if thread.is_alive():
+                raise RuntimeError("Recorder did not shut down cleanly")
+        else:
+            thread.join(timeout=0)
 
         try:
             result = self._result_queue.get_nowait()
@@ -114,14 +153,26 @@ class RecorderService:
                 self._thread = None
 
         if "error" in result:
+            with self._lock:
+                self._last_error = result["error"]
             raise RuntimeError(result["error"])
+
+        with self._lock:
+            self._last_result = result
         return result
 
     def status(self) -> str:
         with self._lock:
             if self._thread and self._thread.is_alive():
                 return "recording"
+            if self._last_error:
+                return "error"
             return "idle"
+
+    def last_error(self) -> Optional[str]:
+        with self._lock:
+            return self._last_error
+
 
 
 def run_transcription(audio_path: str) -> tuple[str, bool]:
@@ -194,7 +245,11 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         if self.path == "/api/status":
-            payload = {"status": recorder_service.status(), "history": transcript_store.all()}
+            payload = {
+                "status": recorder_service.status(),
+                "history": transcript_store.all(),
+                "last_error": recorder_service.last_error(),
+            }
             self._write_json(payload)
         else:
             self._write_json({"error": "Not found"}, status=404)

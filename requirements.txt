@@ -1,0 +1,11 @@
+beautifulsoup4
+keyboard
+numpy
+openai
+openai-agents @ git+https://github.com/openai/openai-agents-python.git
+pydub
+pyperclip
+requests
+rich
+sounddevice
+soundfile
