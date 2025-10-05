@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <title>WhisPTT Terminal Mockup</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-clara.png" alt="WhisPTT logo" class="top-banner__logo"></header>
+
+    <main class="screen">
+      <section class="transcription-panel" aria-label="Transcript window">
+        <div class="status-bar">
+          <span class="timer" id="snippet-timer">00:00.0</span>
+          <span class="status-spinner status-spinner--paused" id="status-spinner" aria-hidden="true"></span>
+          <span class="timer" id="total-timer">00:00.0</span>
+        </div>
+
+                <p class="transcription-placeholder" id="transcription-placeholder" style="display: block;">Transcription appears here</p>
+        <div class="transcription-log" id="transcription-log" aria-live="polite"></div>
+      </section>
+
+      <div class="recording-controls" aria-label="Recording controls">
+        <button class="mic-button" type="button" id="mic-button" aria-label="Hold to record">&#x1F399;</button>
+        <p class="status-text" id="status-text">Hold the button to record</p>
+      </div>
+    </main>
+
+        <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="nav-item" type="button">
+        <span class="icon">PR</span>
+        <span>Profile</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="icon">CH</span>
+        <span>Chats</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="icon">AG</span>
+        <span>Agents</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="icon">DM</span>
+        <span>DMs</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const API_BASE = "http://127.0.0.1:8000";
+      const micButton = document.getElementById("mic-button");
+      const statusText = document.getElementById("status-text");
+      const log = document.getElementById("transcription-log");
+      const placeholder = document.getElementById("transcription-placeholder");
+      const spinner = document.getElementById("status-spinner");
+      const snippetTimerEl = document.getElementById("snippet-timer");
+      const totalTimerEl = document.getElementById("total-timer");
+
+      let isRecording = false;
+      let stopInFlight = false;
+      let spaceHeld = false;
+      let snippetTimerId = null;
+      let snippetStartTime = null;
+      let sessionStartTime = null;
+      let sessionTimerId = null;
+
+      function setStatus(message, tone) {
+        statusText.textContent = message;
+        statusText.classList.remove("success", "error");
+        if (tone) {
+          statusText.classList.add(tone);
+        }
+      }
+
+      function ensureHistoryVisible() {
+        if (!placeholder) {
+          return;
+        }
+        placeholder.style.display = log.childElementCount ? "none" : "block";
+      }
+
+      function ensureSessionTimerRunning() {
+        if (!sessionStartTime) {
+          sessionStartTime = Date.now();
+        }
+        if (sessionTimerId) {
+          return;
+        }
+        sessionTimerId = setInterval(() => {
+          const now = Date.now();
+          totalTimerEl.textContent = formatTime(now - sessionStartTime);
+        }, 100);
+      }
+
+      function startSnippetTimer() {
+        if (snippetTimerId) {
+          clearInterval(snippetTimerId);
+        }
+        snippetStartTime = Date.now();
+        snippetTimerEl.textContent = "00:00.0";
+        snippetTimerId = setInterval(() => {
+          const now = Date.now();
+          snippetTimerEl.textContent = formatTime(now - snippetStartTime);
+        }, 100);
+      }
+
+      function stopSnippetTimer(keepDisplay = false) {
+        if (snippetTimerId) {
+          clearInterval(snippetTimerId);
+          snippetTimerId = null;
+        }
+        if (snippetStartTime) {
+          const duration = Date.now() - snippetStartTime;
+          snippetTimerEl.textContent = keepDisplay ? formatTime(duration) : "00:00.0";
+        }
+        snippetStartTime = null;
+      }
+
+      function resetSnippetTimer() {
+        stopSnippetTimer(false);
+      }
+
+            function renderEntry(entry) {
+        const identifier = entry.audio_path || entry.timestamp || "";
+        const existingFirst = log.firstElementChild;
+        if (identifier && existingFirst) {
+          const existingId = existingFirst.dataset.audioPath || existingFirst.dataset.timestamp || "";
+          if (existingId === identifier) {
+            ensureHistoryVisible();
+            return;
+          }
+        }
+
+        const article = document.createElement("article");
+        article.className = "transcription-entry transcription-entry--new";
+        article.dataset.timestamp = entry.timestamp || new Date().toISOString();
+        if (entry.audio_path) {
+          article.dataset.audioPath = entry.audio_path;
+        }
+
+        const text = document.createElement("p");
+        article.appendChild(text);
+
+        log.prepend(article);
+        ensureHistoryVisible();
+        typeOutText(text, entry.transcript || "");
+      }
+      function typeOutText(element, content) {
+        element.textContent = "";
+        if (!content) {
+          return;
+        }
+        const chars = Array.from(content);
+        let index = 0;
+        const chunk = Math.max(1, Math.floor(chars.length / 120));
+
+        function step() {
+          const slice = chars.slice(index, index + chunk).join("");
+          element.textContent += slice;
+          index += chunk;
+          if (index < chars.length) {
+            requestAnimationFrame(step);
+          }
+        }
+
+        requestAnimationFrame(step);
+      }
+
+      function formatTime(ms) {
+        if (!Number.isFinite(ms) || ms < 0) {
+          ms = 0;
+        }
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        const tenths = Math.floor((ms % 1000) / 100);
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}.${tenths}`;
+      }
+
+      function enterRecordingState() {
+        isRecording = true;
+        micButton.classList.add("mic-button--recording");
+        micButton.classList.add("mic-button--armed");
+        spinner.classList.remove("status-spinner--paused");
+        setStatus("Recording... release to stop");
+        startSnippetTimer();
+        ensureSessionTimerRunning();
+      }
+
+      function exitRecordingState({ resetSnippet = false, statusTone = null, statusMessage = "Ready for the next snippet" } = {}) {
+        const wasRecording = isRecording;
+        isRecording = false;
+        micButton.classList.remove("mic-button--recording");
+        micButton.classList.remove("mic-button--armed");
+        spinner.classList.add("status-spinner--paused");
+        if (resetSnippet) {
+          resetSnippetTimer();
+        } else if (wasRecording) {
+          stopSnippetTimer(true);
+        }
+        setStatus(statusMessage, statusTone);
+      }
+
+      async function startRecording() {
+        if (isRecording) {
+          return;
+        }
+
+        enterRecordingState();
+
+        try {
+          const response = await fetch(`${API_BASE}/api/record/start`, { method: "POST" });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to start recording");
+          }
+        } catch (error) {
+          console.error(error);
+          exitRecordingState({ resetSnippet: true, statusTone: "error", statusMessage: error.message || "Could not start recording" });
+          micButton.classList.remove("mic-button--armed");
+        }
+      }
+
+      async function stopRecording() {
+        if (!isRecording || stopInFlight) {
+          return;
+        }
+
+        stopInFlight = true;
+
+        micButton.classList.remove("mic-button--armed");
+        micButton.classList.remove("mic-button--recording");
+        spinner.classList.add("status-spinner--paused");
+        setStatus("Processing transcript...");
+
+        try {
+          const response = await fetch(`${API_BASE}/api/record/stop`, { method: "POST" });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Recording stop failed");
+          }
+          renderEntry(data);
+          exitRecordingState({ statusTone: "success", statusMessage: "Ready for the next snippet" });
+        } catch (error) {
+          console.error(error);
+          exitRecordingState({ resetSnippet: true, statusTone: "error", statusMessage: error.message || "Could not stop recording" });
+          stopInFlight = false;
+          return;
+        }
+
+        try {
+          const statusResponse = await fetch(`${API_BASE}/api/status`);
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            if (statusData.last_error) {
+              setStatus(statusData.last_error, "error");
+            }
+          }
+        } catch (statusError) {
+          console.warn("Status refresh failed", statusError);
+        } finally {
+          stopInFlight = false;
+        }
+      }
+            micButton.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        micButton.setPointerCapture(event.pointerId);
+        micButton.classList.add("mic-button--armed");
+        startRecording();
+      });
+
+      micButton.addEventListener("pointerup", function (event) {
+        event.preventDefault();
+        micButton.releasePointerCapture(event.pointerId);
+        stopRecording();
+      });
+
+      micButton.addEventListener("pointerleave", function () {
+        if (isRecording && !stopInFlight) {
+          stopRecording();
+        }
+      });
+
+      window.addEventListener("keydown", function (event) {
+        if (event.code === "Space" && !spaceHeld) {
+          event.preventDefault();
+          spaceHeld = true;
+          micButton.classList.add("mic-button--armed");
+          startRecording();
+        }
+      });
+
+      window.addEventListener("keyup", function (event) {
+        if (event.code === "Space" && spaceHeld) {
+          event.preventDefault();
+          spaceHeld = false;
+          if (!stopInFlight) {
+            stopRecording();
+          }
+        }
+      });
+
+      async function hydrateHistory() {
+        try {
+          const response = await fetch(`${API_BASE}/api/status`);
+          if (!response.ok) {
+            return;
+          }
+          const data = await response.json();
+          (data.history || []).slice().reverse().forEach((entry) => {
+            renderEntry(entry);
+          });
+          ensureHistoryVisible();
+        } catch (error) {
+          console.warn("Status check failed", error);
+        }
+      }
+
+      hydrateHistory();
+      ensureHistoryVisible();
+    })();
+  </script>
+
+
+
+</body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
