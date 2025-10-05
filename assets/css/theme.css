@@ -1,0 +1,434 @@
+:root {
+      --matrix-green: #3bff65;
+      --matrix-green-soft: rgba(59, 255, 101, 0.5);
+      --matrix-green-dim: rgba(59, 255, 101, 0.25);
+      --matrix-red: #ff5d73;
+      --black-900: #040404;
+      --black-800: #0a0a0a;
+      --black-700: #111;
+      --panel-line: rgba(59, 255, 101, 0.35);
+      --panel-line-strong: rgba(59, 255, 101, 0.65);
+      --text-muted: rgba(59, 255, 101, 0.7);
+      --text-soft: rgba(59, 255, 101, 0.5);
+      --nav-bg: #060606;
+      --shadow-outer: 0 20px 60px rgba(0, 0, 0, 0.75);
+      --shadow-inner: inset 0 0 40px rgba(0, 0, 0, 0.5);
+      --font-terminal: "Cascadia Code", "Fira Code", "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-terminal);
+      background: radial-gradient(circle at top, #101010 0%, #040404 55%, #000 100%);
+      color: var(--matrix-green);
+      letter-spacing: 0.01em;
+    }
+
+    .app-shell {
+      width: 360px;
+      height: 720px;
+      background: var(--black-900);
+      border: 2px solid var(--panel-line);
+      border-radius: 24px;
+      box-shadow: var(--shadow-outer);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .top-banner {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.75rem 0.4rem;
+      min-height: 138px;
+      background: linear-gradient(180deg, rgba(59, 255, 101, 0.22) 0%, rgba(59, 255, 101, 0.06) 100%);
+    }
+
+    .top-banner__logo {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      max-height: 116px;
+      object-fit: contain;
+    }
+
+
+    .screen {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 0.2rem 0.4rem 1.9rem;
+      background: var(--black-800);
+      box-shadow: var(--shadow-inner);
+      position: relative;
+    }
+
+
+    .transcription-panel {
+      position: relative;
+      min-height: 0;
+      flex: 1;
+      width: calc(100% - 0.6rem);
+      margin: 0 auto;
+      border: 2px solid var(--panel-line-strong);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(10, 10, 10, 0.95) 0%, rgba(5, 5, 5, 0.9) 100%);
+      padding: 0.75rem 1rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      overflow: hidden;
+    }
+    .transcription-panel::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(59, 255, 101, 0.2);
+      border-radius: 18px;
+      pointer-events: none;
+    }
+
+
+    .status-bar {
+      position: sticky;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.15rem;
+      padding-bottom: 0.6rem;
+      background: linear-gradient(180deg, rgba(4, 4, 4, 0.95) 0%, rgba(4, 4, 4, 0.75) 85%, rgba(4,4,4,0) 100%);
+      z-index: 2;
+    }
+
+    .timer {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      min-width: 74px;
+      text-align: center;
+    }
+
+    .status-spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--matrix-green-dim);
+      border-top-color: var(--matrix-green);
+      /* <span style="color: red;">
+      animation: spin 1.15s linear infinite;
+      </span> */
+      /* <span style="color: blue;">
+      CHANGED: Magic number 1.15s replaced with CSS variable for consistency.
+      The spinner rotation speed should be configurable if we want to adjust
+      the visual rhythm across different UI states.
+      </span> */
+      animation: spin var(--spinner-duration, 1.15s) linear infinite;
+      filter: drop-shadow(0 0 4px rgba(59, 255, 101, 0.6));
+    }
+
+    .status-spinner--paused {
+      animation-play-state: paused;
+      opacity: 0.35;
+      border-top-color: var(--matrix-green-soft);
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .transcription-log {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding-top: 0.5rem;
+      padding-bottom: var(--controls-clearance, 140px);
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 15%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%);
+    }
+
+    .transcription-placeholder {
+      margin: auto;
+      text-align: center;
+      color: var(--matrix-green-dim);
+      font-size: 0.95rem;
+      letter-spacing: 0.12em;
+    }
+
+    .transcription-entry {
+      position: relative;
+      border: 1px solid var(--panel-line);
+      border-radius: 14px;
+      padding: 0.75rem 1rem 0.85rem;
+      background: rgba(7, 7, 7, 0.88);
+      color: var(--matrix-green);
+      line-height: 1.45;
+      letter-spacing: 0.05em;
+      overflow: hidden;
+      transform-origin: top;
+    }
+
+    .transcription-entry--new {
+      /* <span style="color: red;">
+      animation: slideUp 200ms ease-out;
+      </span> */
+      /* <span style="color: blue;">
+      CHANGED: Magic number 200ms replaced with CSS variable for consistent timing
+      across all animations. If we want to speed up or slow down UI feedback globally,
+      we can adjust one variable instead of hunting through the stylesheet.
+      </span> */
+      animation: slideUp var(--animation-duration-short, 200ms) ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        /* <span style="color: red;">
+        transform: translateY(24px);
+        </span> */
+        /* <span style="color: blue;">
+        CHANGED: Magic number 24px replaced with CSS variable. This controls how far
+        new entries "slide up" when appearing. The value should relate to entry padding.
+        </span> */
+        transform: translateY(var(--slide-distance, 24px));
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .transcription-entry p {
+      margin: 0;
+      color: var(--matrix-green);
+      font-size: 0.92rem;
+      white-space: pre-wrap;
+    }
+
+    .status-text {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
+
+    .status-text.success {
+      color: rgba(59, 255, 101, 0.85);
+    }
+
+    .status-text.error {
+      color: var(--matrix-red);
+    }
+
+    .recording-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      column-gap: 1.2rem;
+      row-gap: 0.6rem;
+      margin-top: auto;
+      padding: 0.25rem 0 0.8rem;
+      position: relative;
+    }
+
+    .mic-button,
+    .control-button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--mic-button-size, 68px);
+      height: var(--mic-button-size, 68px);
+      margin: 0;
+      border-radius: 50%;
+      border: 2px solid var(--matrix-green);
+      background: var(--black-900);
+      color: var(--matrix-green);
+      font-size: 1.9rem;
+      cursor: pointer;
+      transition:
+        transform var(--animation-duration-short, 120ms) ease,
+        box-shadow var(--animation-duration-medium, 160ms) ease,
+        border-color var(--animation-duration-medium, 160ms) ease,
+        color var(--animation-duration-medium, 160ms) ease;
+      box-shadow: 0 0 10px rgba(59, 255, 101, 0.3);
+      z-index: 1;
+    }
+
+    .recording-controls .status-text {
+      flex-basis: 100%;
+      margin-top: 0.4rem;
+    }
+
+    .control-button__icon {
+      width: 34px;
+      height: 34px;
+      filter: drop-shadow(0 0 8px rgba(59, 255, 101, 0.45));
+      pointer-events: none;
+    }
+
+    .control-button__icon--mic {
+      width: 38px;
+      height: 38px;
+    }
+
+    .control-button:hover,
+    .control-button:focus-visible {
+      border-color: var(--matrix-green);
+      box-shadow: 0 0 12px rgba(59, 255, 101, 0.45);
+      outline: none;
+    }
+
+    .control-button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .mic-button::before {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: conic-gradient(var(--matrix-green) 0deg, rgba(59,255,101,0) 120deg, rgba(59,255,101,0) 360deg);
+      opacity: 0;
+      /* <span style="color: red;">
+      transition: opacity 200ms ease;
+      animation: orbit 2.6s linear infinite;
+      </span> */
+      /* <span style="color: blue;">
+      CHANGED: Magic numbers replaced with CSS variables for consistency
+      </span> */
+      transition: opacity var(--animation-duration-short, 200ms) ease;
+      animation: orbit var(--orbit-duration, 2.6s) linear infinite;
+    }
+
+    @keyframes orbit {
+      to { transform: rotate(360deg); }
+    }
+
+    .mic-button--armed::before {
+      opacity: 0.35;
+    }
+
+    .mic-button--recording {
+      border-color: var(--matrix-red);
+      color: var(--matrix-red);
+      box-shadow: 0 0 16px rgba(255, 93, 115, 0.45);
+    }
+
+    .mic-button--recording::before {
+      background: conic-gradient(var(--matrix-red) 0deg, rgba(255,93,115,0.05) 140deg, rgba(255,93,115,0.05) 360deg);
+      opacity: 0.6;
+      /* <span style="color: red;">
+      animation-duration: 1.5s;
+      </span> */
+      /* <span style="color: blue;">
+      CHANGED: Magic number replaced with calculated value based on orbit duration.
+      Recording state should spin faster (1.5s vs 2.6s) to convey urgency.
+      </span> */
+      animation-duration: calc(var(--orbit-duration, 2.6s) * 0.58);
+    }
+
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: linear-gradient(180deg, rgba(59, 255, 101, 0.04) 0%, rgba(4, 4, 4, 0.92) 100%);
+      color: var(--text-soft);
+      padding: 0.6rem 0;
+      gap: 0.4rem;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 0;
+      border: none;
+      background: transparent;
+      font-size: 0.75rem;
+      color: inherit;
+      cursor: pointer;
+      /* <span style="color: red;">
+      transition: color 140ms ease, background 140ms ease;
+      </span> */
+      /* <span style="color: blue;">
+      CHANGED: Magic numbers replaced with CSS variable for consistent timing
+      </span> */
+      transition: 
+        color var(--animation-duration-medium, 140ms) ease,
+        background var(--animation-duration-medium, 140ms) ease;
+    }
+
+    
+
+    .nav-item:hover,
+    .nav-item:focus-visible {
+      color: var(--matrix-green);
+      background: rgba(59, 255, 101, 0.08);
+      outline: none;
+    }
+
+    .icon {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .mic-button:focus-visible {
+      outline: 3px solid rgba(59, 255, 101, 0.4);
+      outline-offset: 3px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(59, 255, 101, 0.4);
+      border-radius: 999px;
+    }
+
+    /* <span style="color: blue;">
+    ADDED: CSS variables section for easier theming and maintenance.
+    These should be moved to :root for global access and to support
+    future dark/light mode toggles or user customization.
+    </span> */
+    :root {
+      --animation-duration-short: 120ms;
+      --animation-duration-medium: 160ms;
+      --animation-duration-long: 200ms;
+      --spinner-duration: 1.15s;
+      --orbit-duration: 2.6s;
+      --mic-button-size: 68px;
+      --controls-clearance: 140px;
+      --slide-distance: 24px;
+    }
+      
+
+    .nav-item--agents .nav-icon {
+      width: 26px;
+      height: 26px;
+      filter: drop-shadow(0 0 6px rgba(59, 255, 101, 0.35));
+    }

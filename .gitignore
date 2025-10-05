@@ -1,0 +1,30 @@
+# Git internals
+.git/
+
+# Virtual environments
+.venv/
+
+# Python cache
+__pycache__/
+
+# Runtime/session data
+sessions/
+
+# Logs and scratch files
+*.log
+debug_log.txt
+
+
+# Generated images / drafts
+*.png
+
+#files and directories to exclude from git rollback 
+#these are the more important ones
+codex-feedback.txt
+arhived-py-files/
+front-end-designs/
+
+
+#codex vs code instructions that led to garbage 
+codex-feedback.txt
+
