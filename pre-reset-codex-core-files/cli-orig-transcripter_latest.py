@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from openai import OpenAI
 import sys, time
 from rich.console import Console
@@ -22,11 +22,6 @@ def transcribe_and_enhance(audio_path):
             file=audio_file
         )
     raw_text = transcript.text.strip()
-
-with open("sessions/transcripts.log", "a", encoding="utf-8") as log_file:
-    timestamp = datetime.now(timezone.utc).isoformat()
-    log_file.write(f"[{timestamp}] {audio_path} :: {raw_text}\n")
-
 
     # Enhance with GPT
     # enhanced = client.chat.completions.create(

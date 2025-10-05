@@ -5,6 +5,7 @@ import soundfile as sf
 import keyboard
 import io
 from datetime import datetime
+from pydub import AudioSegment
 import threading
 import ui  # add near top with your other imports
 
@@ -61,8 +62,15 @@ def record_push_to_talk():
                                 indicator_thread.join()
                     sd.sleep(200)  # throttle loop
 
-    ui.print_success(f"Recording saved to {wav_outpath}")
-    return wav_outpath
+    # after finishing recording, convert to mp3
+    mp3_outpath = wav_outpath.replace(".wav", ".mp3")
+    try:
+        AudioSegment.from_wav(wav_outpath).export(mp3_outpath, format="mp3")
+        ui.print_success(f"✓ Compressed recording saved as {mp3_outpath}")
+        return mp3_outpath
+    except Exception as e:
+        ui.print_error(f"MP3 conversion failed: {e}")
+        return wav_outpath
 
 # ===============================
 # Experimental Chunked Recorder
@@ -123,6 +131,4 @@ def _frames_to_wav(frames, samplerate, channels):
     sf.write(wav_bytes, data, samplerate, format="WAV", subtype="PCM_16")
     wav_bytes.seek(0)
     return wav_bytes.read()
-
-
 

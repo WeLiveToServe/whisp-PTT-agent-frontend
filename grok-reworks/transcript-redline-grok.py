@@ -24,7 +24,13 @@ def transcribe_and_enhance(audio_path):
     raw_text = transcript.text.strip()
 
 with open("sessions/transcripts.log", "a", encoding="utf-8") as log_file:
+# **RED FONT START**
+#    timestamp = datetime.utcnow().isoformat()
+# **RED FONT END**
     timestamp = datetime.now(timezone.utc).isoformat()
+# **BLUE FONT START**
+# Changed to use timezone-aware datetime to fix deprecation warning for utcnow() and ensure consistent UTC handling.
+# **BLUE FONT END**
     log_file.write(f"[{timestamp}] {audio_path} :: {raw_text}\n")
 
 

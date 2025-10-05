@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhispPTT Terminal Mockup</title>
+<!-- **RED FONT START** -->
+<!-- No stylesheet link was present; adding it below. -->
+<!-- **RED FONT END** -->
+    <link rel="stylesheet" href="assets/css/theme.css">
+<!-- **BLUE FONT START** -->
+<!-- Added link to external CSS as per session transcript to externalize styles and make the HTML asset-based, improving maintainability. -->
+<!-- **BLUE FONT END** -->
+</head>
+<body>
+    <div class="app-shell">
+        <div class="top-banner">
+            <img src="assets/html-logo-images/whisptt-logo-clara.png" alt="WhispPTT Logo" class="top-banner__logo">
+        </div>
+        <div class="screen">
+            <div class="transcription-panel">
+                <div class="status-bar">
+                    <span class="timer" id="snippet-timer">00:00.0</span>
+                    <div class="status-spinner" id="status-spinner"></div>
+                    <span class="timer" id="total-timer">00:00.0</span>
+                </div>
+                <div class="transcription-log" id="transcription-log">
+                    <div class="transcription-placeholder">
+                        Transcription appears here
+                    </div>
+                </div>
+                <div class="recording-controls">
+                    <button class="mic-button" id="mic-button">&#x1F399;</button>
+                    <span class="status-text" id="status-text">Hold the button to record</span>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <button class="nav-item" id="profile-btn">
+                    <span class="icon">PR</span>
+                    Profile
+                </button>
+                <button class="nav-item" id="chats-btn">
+                    <span class="icon">CH</span>
+                    Chats
+                </button>
+                <button class="nav-item" id="agents-btn">
+                    <span class="icon">AG</span>
+                    Agents
+                </button>
+                <button class="nav-item" id="dms-btn">
+                    <span class="icon">DM</span>
+                    DMs
+                </button>
+            </div>
+        </div>
+    </div>
+<!-- Note: JavaScript for functionality (fetch, timers, events) should be added here or in a separate file, as per session transcript. Assuming it's implemented separately for now. -->
+</body>
+</html>

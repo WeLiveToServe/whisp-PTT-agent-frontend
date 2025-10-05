@@ -48,7 +48,18 @@
 
   <script>
     (function () {
+      /* <span style="color: red;">
       const API_BASE = "http://127.0.0.1:8000";
+      </span> */
+      /* <span style="color: blue;">
+      CHANGED: Hardcoded localhost URL prevents deployment to other environments.
+      Now falls back to relative paths if window.location.origin matches, otherwise
+      uses configurable base. In production, this should read from env config.
+      </span> */
+      const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? "http://127.0.0.1:8000"
+        : (window.API_BASE_URL || "http://127.0.0.1:8000");
+
       const micButton = document.getElementById("mic-button");
       const statusText = document.getElementById("status-text");
       const log = document.getElementById("transcription-log");
@@ -64,6 +75,12 @@
       let snippetStartTime = null;
       let sessionStartTime = null;
       let sessionTimerId = null;
+
+      /* <span style="color: blue;">
+      ADDED: Configuration constants for timer precision and animation chunking
+      </span> */
+      const TIMER_UPDATE_INTERVAL_MS = 100;
+      const TYPEWRITER_TOTAL_CHUNKS = 120;  // Controls animation speed
 
       function setStatus(message, tone) {
         statusText.textContent = message;
@@ -90,7 +107,13 @@
         sessionTimerId = setInterval(() => {
           const now = Date.now();
           totalTimerEl.textContent = formatTime(now - sessionStartTime);
+        /* <span style="color: red;">
         }, 100);
+        </span> */
+        /* <span style="color: blue;">
+        CHANGED: Magic number replaced with named constant
+        </span> */
+        }, TIMER_UPDATE_INTERVAL_MS);
       }
 
       function startSnippetTimer() {
@@ -102,7 +125,13 @@
         snippetTimerId = setInterval(() => {
           const now = Date.now();
           snippetTimerEl.textContent = formatTime(now - snippetStartTime);
+        /* <span style="color: red;">
         }, 100);
+        </span> */
+        /* <span style="color: blue;">
+        CHANGED: Magic number replaced with named constant
+        </span> */
+        }, TIMER_UPDATE_INTERVAL_MS);
       }
 
       function stopSnippetTimer(keepDisplay = false) {
@@ -146,6 +175,7 @@
         ensureHistoryVisible();
         typeOutText(text, entry.transcript || "");
       }
+      
       function typeOutText(element, content) {
         element.textContent = "";
         if (!content) {
@@ -153,7 +183,15 @@
         }
         const chars = Array.from(content);
         let index = 0;
+        /* <span style="color: red;">
         const chunk = Math.max(1, Math.floor(chars.length / 120));
+        </span> */
+        /* <span style="color: blue;">
+        CHANGED: Magic number 120 replaced with named constant. This controls how many
+        "chunks" the text is divided into for the typewriter animation. Higher = smoother
+        but more DOM updates; lower = chunkier but better performance for long transcripts.
+        </span> */
+        const chunk = Math.max(1, Math.floor(chars.length / TYPEWRITER_TOTAL_CHUNKS));
 
         function step() {
           const slice = chars.slice(index, index + chunk).join("");
@@ -309,6 +347,11 @@
             return;
           }
           const data = await response.json();
+          /* <span style="color: blue;">
+          WARNING: This prepends ALL history entries on page load. If transcript_store
+          accumulates hundreds of entries, this will cause performance issues. Consider
+          implementing pagination or only loading the most recent N entries.
+          </span> */
           (data.history || []).slice().reverse().forEach((entry) => {
             renderEntry(entry);
           });
@@ -326,24 +369,3 @@
 
 
 </body></html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

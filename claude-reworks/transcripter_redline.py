@@ -7,7 +7,6 @@ import io
 
 console = Console()
 
-
 # Create a client
 client = OpenAI()
 
@@ -23,10 +22,20 @@ def transcribe_and_enhance(audio_path):
         )
     raw_text = transcript.text.strip()
 
-with open("sessions/transcripts.log", "a", encoding="utf-8") as log_file:
-    timestamp = datetime.now(timezone.utc).isoformat()
-    log_file.write(f"[{timestamp}] {audio_path} :: {raw_text}\n")
-
+    # <span style="color: red;">
+    # with open("sessions/transcripts.log", "a", encoding="utf-8") as log_file:
+    #     timestamp = datetime.now(timezone.utc).isoformat()
+    #     log_file.write(f"[{timestamp}] {audio_path} :: {raw_text}\n")
+    # </span>
+    # <span style="color: blue;">
+    # CHANGED: The above code was incorrectly indented at module level, causing it to run
+    # on import rather than when the function is called. It also referenced local variables
+    # (raw_text, audio_path) that don't exist in module scope. Moved inside the function.
+    # </span>
+    
+    with open("sessions/transcripts.log", "a", encoding="utf-8") as log_file:
+        timestamp = datetime.now(timezone.utc).isoformat()
+        log_file.write(f"[{timestamp}] {audio_path} :: {raw_text}\n")
 
     # Enhance with GPT
     # enhanced = client.chat.completions.create(
@@ -49,7 +58,14 @@ def save_transcripts(session_file, raw_text, enhanced_text, audio_file):
     md_path = base_name + ".md"
     txt_path = base_name + ".txt"
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # <span style="color: red;">
+    # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # </span>
+    # <span style="color: blue;">
+    # CHANGED: datetime.now() without timezone info creates naive datetime objects.
+    # Better to use timezone-aware datetimes for consistency with other parts of the codebase.
+    # </span>
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     # Write MD log (debugging)
     with open(md_path, "a", encoding="utf-8") as f:
@@ -105,4 +121,3 @@ def live_transcribe(stream_generator, chunk_seconds=1):
             time.sleep(0.01)
 
         yield partial_text
-

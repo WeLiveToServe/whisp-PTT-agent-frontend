@@ -4,7 +4,10 @@ import sounddevice as sd
 import soundfile as sf
 import keyboard
 import io
-from datetime import datetime
+from datetime import datetime, timezone
+# **BLUE FONT START**
+# Added timezone import to support UTC timestamping for consistency across the codebase.
+# **BLUE FONT END**
 import threading
 import ui  # add near top with your other imports
 
@@ -20,7 +23,13 @@ def record_push_to_talk():
         q.put(indata.copy())
 
     os.makedirs("sessions", exist_ok=True)
-    timestamp = datetime.now().strftime("%Y-%m-%d-%Hh-%Mm-recording")
+# **RED FONT START**
+#    timestamp = datetime.now().strftime("%Y-%m-%d-%Hh-%Mm-recording")
+# **RED FONT END**
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d-%Hh-%Mm-recording")
+# **BLUE FONT START**
+# Changed to use timezone-aware UTC datetime for consistent timestamping with other modules, avoiding local time discrepancies.
+# **BLUE FONT END**
     wav_outpath = os.path.join("sessions", f"{timestamp}.wav")
 
     ui.print_status("Press SPACE to record, BACKSPACE to stop.")
@@ -53,7 +62,7 @@ def record_push_to_talk():
                 else:
                     if last_state != "paused":
                         last_state = "paused"
-                        ui.print_status("⏸️  Paused")
+                        ui.print_status("??  Paused")
                         # stop spinner/timer while paused
                         if run_flag[0]:
                             run_flag[0] = False
@@ -90,13 +99,13 @@ def record_chunks_push_to_talk(chunk_seconds=1, samplerate=44100, channels=1):
     with sd.InputStream(samplerate=samplerate, channels=channels, callback=callback):
         while True:
             if keyboard.is_pressed("backspace"):
-                print("⌫ Finished live recording.")
+                print("? Finished live recording.")
                 if buffer:
                     yield _frames_to_wav(buffer, samplerate, channels)
                 break
             elif keyboard.is_pressed("space"):
                 if last_state != "recording":
-                    print("🎙️  Recording...")
+                    print("???  Recording...")
                     last_state = "recording"
                 buffer.extend(q.get())
                 if len(buffer) >= frames_per_chunk:
@@ -104,7 +113,7 @@ def record_chunks_push_to_talk(chunk_seconds=1, samplerate=44100, channels=1):
                     buffer = []
             else:
                 if last_state != "paused":
-                    print("⏸️  Paused")
+                    print("??  Paused")
                     last_state = "paused"
                 sd.sleep(200)
 
@@ -123,6 +132,3 @@ def _frames_to_wav(frames, samplerate, channels):
     sf.write(wav_bytes, data, samplerate, format="WAV", subtype="PCM_16")
     wav_bytes.seek(0)
     return wav_bytes.read()
-
-
-
