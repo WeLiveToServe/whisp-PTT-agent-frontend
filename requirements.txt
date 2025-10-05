@@ -9,3 +9,6 @@ requests
 rich
 sounddevice
 soundfile
+PyYAML
+fastapi
+uvicorn

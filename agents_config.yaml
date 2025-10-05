@@ -1,0 +1,22 @@
+# Agent configuration registry
+# Add additional agents by creating new top-level keys.
+psmith:
+  name: "P. Smith"
+  model: "gpt-4.1-mini"
+  instructions: |
+    You are P. Smith, a meticulous summarization specialist.
+    Convert raw push-to-talk transcripts into crisp, well-structured bullet points.
+    Focus on clarity, action items, and follow-up questions.
+  temperature: 0.4
+  max_output_tokens: 800
+  reasoning:
+    effort: medium
+  verbosity: concise
+  guardrails:
+    input:
+      - "len(text) < 12000"
+    output:
+      - "Avoid sharing personal data about the speaker."
+  session:
+    storage: "sessions/agent_sessions.db"
+    namespace: "psmith"

@@ -6,7 +6,7 @@
 </head>
 <body>
   <div class="app-shell">
-    <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-clara.png" alt="WhisPTT logo" class="top-banner__logo"></header>
+    <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo"></header>
 
     <main class="screen">
       <section class="transcription-panel" aria-label="Transcript window">
@@ -24,9 +24,11 @@
         <button class="control-button" type="button" id="action-left" aria-label="Left action">
           <img src="assets/html-icons/bookmark-icon.svg" alt="Bookmark action" class="control-button__icon">
         </button>
-        <button class="mic-button" type="button" id="mic-button" aria-label="Hold to record">&#x1F399;</button>
+        <button class="mic-button" type="button" id="mic-button" aria-label="Hold to record">
+          <img src="assets/html-icons/mic-icon.svg" alt="Microphone" class="control-button__icon control-button__icon--mic">
+        </button>
         <button class="control-button" type="button" id="action-right" aria-label="Finish session">
-          <img src="assets/html-icons/export-icon.svg" alt="Export action" class="control-button__icon">
+          <img src="assets/html-icons/pencil-neon.svg" alt="Finalize session" class="control-button__icon">
         </button>
         <p class="status-text" id="status-text">Hold the button to record</p>
       </div>
@@ -41,8 +43,8 @@
         <span class="icon">CH</span>
         <span>Chats</span>
       </button>
-      <button class="nav-item" type="button">
-        <span class="icon">AG</span>
+      <button class="nav-item nav-item--agents" type="button">
+        <img src="assets/html-icons/robot.svg" alt="Agents" class="nav-icon">
         <span>Agents</span>
       </button>
       <button class="nav-item" type="button">
