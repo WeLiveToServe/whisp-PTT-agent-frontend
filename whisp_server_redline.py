@@ -106,24 +106,16 @@ class RecorderService:
 
             self._thread = threading.Thread(target=worker, daemon=True)
             self._thread.start()
+            # Signal the recorder loop immediately so quick taps still start capture
+            self._virtual_keys.set_space(True)
 
-        # <span style="color: red;">
-        # # Give PortAudio a moment to initialise and fail fast if needed
-        # time.sleep(0.1)
-        # </span>
-        # <span style="color: blue;">
-        # CHANGED: Magic number 0.1 replaced with named constant for clarity.
-        # This sleep gives PortAudio time to initialize or fail immediately if there's
-        # a hardware/driver issue. 100ms is arbitrary but tested to work reliably.
-        # </span>
         PORTAUDIO_INIT_DELAY_SECONDS = 0.1
         time.sleep(PORTAUDIO_INIT_DELAY_SECONDS)
 
         with self._lock:
             thread = self._thread
-            if thread and thread.is_alive():
-                self._virtual_keys.set_space(True)
-                return
+        if thread and thread.is_alive():
+            return
 
         try:
             result = self._result_queue.get_nowait()
@@ -270,6 +262,14 @@ class TranscriptStore:
         with self._lock:
             return list(self._entries)
 
+    def snapshot(self) -> list[dict]:
+        with self._lock:
+            return list(self._entries)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._entries.clear()
+
 
 recorder_service = RecorderService()
 transcript_store = TranscriptStore()
@@ -320,6 +320,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_start()
         elif self.path == "/api/record/stop":
             self._handle_stop()
+        elif self.path == "/api/session/export":
+            self._handle_export()
         else:
             self._write_json({"error": "Not found"}, status=404)
 
@@ -349,7 +351,35 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         transcript_text, mocked = run_transcription(audio_path)
         entry = transcript_store.add(transcript_text, audio_path, mocked)
+        try:
+            Path(audio_path).unlink(missing_ok=True)
+        except Exception as cleanup_error:  # pragma: no cover - best effort cleanup
+            logger.debug(f"Failed to remove audio file {audio_path}: {cleanup_error}")
         self._write_json({"status": "completed", **entry})
+
+    def _handle_export(self) -> None:
+        history = transcript_store.snapshot()
+        export_timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        export_path = SESSIONS_DIR / f"session-{export_timestamp}.txt"
+
+        if not history:
+            transcript_store.clear()
+            export_path.touch(exist_ok=True)
+            self._write_json({"status": "exported", "export_path": str(export_path), "entries": 0})
+            return
+
+        lines = []
+        for entry in history:
+            stamp = entry.get("timestamp", "")
+            transcript = entry.get("transcript", "").strip()
+            lines.append(f"[{stamp}] {transcript}")
+
+        export_contents = "\n\n".join(lines) + "\n"
+        export_path.write_text(export_contents, encoding="utf-8")
+        transcript_store.clear()
+
+        combined_transcript = "\n\n".join(entry.get("transcript", "").strip() for entry in history if entry.get("transcript"))
+        self._write_json({"status": "exported", "export_path": str(export_path), "entries": len(history), "combined_transcript": combined_transcript})
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
