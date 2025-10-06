@@ -11,9 +11,7 @@
     <main class="screen">
       <section class="transcription-panel" aria-label="Transcript window">
         <div class="status-bar">
-          <span class="timer" id="snippet-timer">00:00.0</span>
-          <span class="status-spinner status-spinner--paused" id="status-spinner" aria-hidden="true"></span>
-          <span class="timer" id="total-timer">00:00.0</span>
+          <span class="timer status-bar__timer" id="snippet-timer">00:00.0</span>
         </div>
 
                 <p class="transcription-placeholder" id="transcription-placeholder" style="display: block;">Transcription appears here</p>
@@ -24,34 +22,16 @@
         <button class="control-button" type="button" id="action-left" aria-label="Left action">
           <img src="assets/html-icons/bookmark-icon.svg" alt="Bookmark action" class="control-button__icon">
         </button>
-        <button class="mic-button" type="button" id="mic-button" aria-label="Hold to record">
+        <button class="mic-button" type="button" id="mic-button" aria-label="Tap to record">
           <img src="assets/html-icons/mic-icon.svg" alt="Microphone" class="control-button__icon control-button__icon--mic">
         </button>
         <button class="control-button" type="button" id="action-right" aria-label="Finish session">
           <img src="assets/html-icons/pencil-neon.svg" alt="Finalize session" class="control-button__icon">
         </button>
-        <p class="status-text" id="status-text">Hold the button to record</p>
+        <p class="status-text" id="status-text">Tap the button to start</p>
       </div>
     </main>
 
-        <nav class="bottom-nav" aria-label="Primary navigation">
-      <button class="nav-item" type="button">
-        <span class="icon">PR</span>
-        <span>Profile</span>
-      </button>
-      <button class="nav-item" type="button">
-        <span class="icon">CH</span>
-        <span>Chats</span>
-      </button>
-      <button class="nav-item nav-item--agents" type="button">
-        <img src="assets/html-icons/robot.svg" alt="Agents" class="nav-icon">
-        <span>Agents</span>
-      </button>
-      <button class="nav-item" type="button">
-        <span class="icon">DM</span>
-        <span>DMs</span>
-      </button>
-    </nav>
   </div>
 
   <script>
@@ -69,22 +49,18 @@
         : (window.API_BASE_URL || "http://127.0.0.1:8000");
 
       const micButton = document.getElementById("mic-button");
+      const bookmarkButton = document.getElementById("action-left");
       const exportButton = document.getElementById("action-right");
       const statusText = document.getElementById("status-text");
       const log = document.getElementById("transcription-log");
       const placeholder = document.getElementById("transcription-placeholder");
-      const spinner = document.getElementById("status-spinner");
       const snippetTimerEl = document.getElementById("snippet-timer");
-      const totalTimerEl = document.getElementById("total-timer");
 
       let isRecording = false;
       let stopInFlight = false;
       let exportInFlight = false;
-      let spaceHeld = false;
       let snippetTimerId = null;
       let snippetStartTime = null;
-      let sessionStartTime = null;
-      let sessionTimerId = null;
 
       /* <span style="color: blue;">
       ADDED: Configuration constants for timer precision and animation chunking
@@ -105,25 +81,6 @@
           return;
         }
         placeholder.style.display = log.childElementCount ? "none" : "block";
-      }
-
-      function ensureSessionTimerRunning() {
-        if (!sessionStartTime) {
-          sessionStartTime = Date.now();
-        }
-        if (sessionTimerId) {
-          return;
-        }
-        sessionTimerId = setInterval(() => {
-          const now = Date.now();
-          totalTimerEl.textContent = formatTime(now - sessionStartTime);
-        /* <span style="color: red;">
-        }, 100);
-        </span> */
-        /* <span style="color: blue;">
-        CHANGED: Magic number replaced with named constant
-        </span> */
-        }, TIMER_UPDATE_INTERVAL_MS);
       }
 
       function startSnippetTimer() {
@@ -158,15 +115,7 @@
 
       function resetSnippetTimer() {
         stopSnippetTimer(false);
-      }
-
-      function resetSessionTimer() {
-        if (sessionTimerId) {
-          clearInterval(sessionTimerId);
-          sessionTimerId = null;
-        }
-        sessionStartTime = null;
-        totalTimerEl.textContent = "00:00.0";
+        snippetTimerEl.textContent = "00:00.0";
       }
 
       function clearTranscriptionHistory() {
@@ -197,7 +146,6 @@
 
           clearTranscriptionHistory();
           resetSnippetTimer();
-          resetSessionTimer();
 
           let successMessage = data.export_path ? `Session saved to ${data.export_path}` : "Session log created";
           const combined = data.combined_transcript || "";
@@ -256,7 +204,7 @@
           log.scrollTop = log.scrollHeight;
         }
       }
-      
+
       function typeOutText(element, content) {
         element.textContent = "";
         if (!content) {
@@ -302,18 +250,15 @@
         isRecording = true;
         micButton.classList.add("mic-button--recording");
         micButton.classList.add("mic-button--armed");
-        spinner.classList.remove("status-spinner--paused");
-        setStatus("Recording... release to stop");
+        setStatus("Recording... tap to stop");
         startSnippetTimer();
-        ensureSessionTimerRunning();
       }
 
-      function exitRecordingState({ resetSnippet = false, statusTone = null, statusMessage = "Ready for the next snippet" } = {}) {
+      function exitRecordingState({ resetSnippet = false, statusTone = null, statusMessage = "Tap the button to start" } = {}) {
         const wasRecording = isRecording;
         isRecording = false;
         micButton.classList.remove("mic-button--recording");
         micButton.classList.remove("mic-button--armed");
-        spinner.classList.add("status-spinner--paused");
         if (resetSnippet) {
           resetSnippetTimer();
         } else if (wasRecording) {
@@ -351,7 +296,6 @@
 
         micButton.classList.remove("mic-button--armed");
         micButton.classList.remove("mic-button--recording");
-        spinner.classList.add("status-spinner--paused");
         setStatus("Processing transcript...");
 
         try {
@@ -361,7 +305,7 @@
             throw new Error(data.error || "Recording stop failed");
           }
           renderEntry(data);
-          exitRecordingState({ statusTone: "success", statusMessage: "Ready for the next snippet" });
+          exitRecordingState({ statusTone: "success", statusMessage: "Tap the button to start" });
         } catch (error) {
           console.error(error);
           exitRecordingState({ resetSnippet: true, statusTone: "error", statusMessage: error.message || "Could not stop recording" });
@@ -383,41 +327,38 @@
           stopInFlight = false;
         }
       }
-            micButton.addEventListener("pointerdown", function (event) {
-        event.preventDefault();
-        micButton.setPointerCapture(event.pointerId);
-        micButton.classList.add("mic-button--armed");
-        startRecording();
-      });
 
-      micButton.addEventListener("pointerup", function (event) {
+      micButton.addEventListener("click", function (event) {
         event.preventDefault();
-        micButton.releasePointerCapture(event.pointerId);
-        stopRecording();
-      });
-
-      micButton.addEventListener("pointerleave", function () {
-        if (isRecording && !stopInFlight) {
-          stopRecording();
+        if (stopInFlight) {
+          return;
         }
-      });
-
-      window.addEventListener("keydown", function (event) {
-        if (event.code === "Space" && !spaceHeld) {
-          event.preventDefault();
-          spaceHeld = true;
+        if (isRecording) {
+          stopRecording();
+        } else {
           micButton.classList.add("mic-button--armed");
           startRecording();
         }
       });
 
-      window.addEventListener("keyup", function (event) {
-        if (event.code === "Space" && spaceHeld) {
-          event.preventDefault();
-          spaceHeld = false;
-          if (!stopInFlight) {
-            stopRecording();
+      bookmarkButton.addEventListener("click", async function (event) {
+        event.preventDefault();
+        if (isRecording) {
+          setStatus("Stop recording before clearing", "error");
+          return;
+        }
+        clearTranscriptionHistory();
+        resetSnippetTimer();
+        setStatus("Transcript cleared", "success");
+        try {
+          const response = await fetch(`${API_BASE}/api/transcript/clear`, { method: "POST" });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to clear transcript history");
           }
+        } catch (error) {
+          console.warn("Transcript clear sync failed", error);
+          setStatus(error.message || "Could not sync clear action", "error");
         }
       });
 
@@ -456,3 +397,4 @@
 
 
 </body></html>
+

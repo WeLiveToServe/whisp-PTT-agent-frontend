@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Optional
 import logging
 
-import recorder_latest  # reuses push-to-talk logic
+import recorder_redline as recorder_latest  # reuses push-to-talk logic
 
 try:
-    import transcripter_latest
+    import transcripter_redline as transcripter_latest
 except Exception:  # fallback when transcription module or credentials are unavailable
     transcripter_latest = None  # type: ignore
 
@@ -322,6 +322,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_stop()
         elif self.path == "/api/session/export":
             self._handle_export()
+        elif self.path == "/api/transcript/clear":
+            self._handle_transcript_clear()
         else:
             self._write_json({"error": "Not found"}, status=404)
 
@@ -356,6 +358,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         except Exception as cleanup_error:  # pragma: no cover - best effort cleanup
             logger.debug(f"Failed to remove audio file {audio_path}: {cleanup_error}")
         self._write_json({"status": "completed", **entry})
+
+    def _handle_transcript_clear(self) -> None:
+        transcript_store.clear()
+        self._write_json({"status": "cleared"})
 
     def _handle_export(self) -> None:
         history = transcript_store.snapshot()
