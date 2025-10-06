@@ -1,32 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- Neon glow -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="6" result="blur1"/>
-      <feGaussianBlur stdDeviation="12" in="SourceGraphic" result="blur2"/>
-      <feMerge>
-        <feMergeNode in="blur2"/>
-        <feMergeNode in="blur1"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <style>
-      /* Match the refresh icon line width (28 on a 512 canvas) */
-      :root { --sw: 28; --neon: #00ff6a; --bg: #0a0a0a; }
-    </style>
-  </defs>
-
-  <!-- Background -->
-  <rect x="0" y="0" width="512" height="512" fill="var(--bg)"/>
-
-  <g fill="none" stroke="var(--neon)" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--sw)" filter="url(#glow)">
-    <!-- Clipboard body -->
-    <rect x="96" y="128" width="320" height="320" rx="36" ry="36"/>
-    <!-- Clipboard top clip -->
-    <rect x="176" y="64" width="160" height="80" rx="36" ry="36"/>
-    <!-- Plus sign (add) -->
-    <line x1="312" y1="352" x2="392" y2="352"/>
-    <line x1="352" y1="312" x2="352" y2="392"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#3bff65" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="14" y="14" width="36" height="46" rx="6"/>
+  <path d="M26 8h12a4 4 0 0 1 4 4v4H22v-4a4 4 0 0 1 4-4z"/>
+  <path d="M22 30h20"/>
+  <path d="M22 38h20"/>
+  <path d="M22 46h16"/>
 </svg>

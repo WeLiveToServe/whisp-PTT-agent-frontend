@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WhisPTT Transcript Editor</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .editor-textarea {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--matrix-green);
+      font-family: var(--font-terminal);
+      font-size: 0.75rem;
+      line-height: 1.5;
+      letter-spacing: 0.04em;
+      resize: none;
+      outline: none;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      padding: 0;
+    }
+    .editor-textarea::placeholder {
+      color: var(--text-soft);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo"></header>
+
+    <main class="screen">
+      <section class="transcription-panel" aria-label="Transcript editor">
+        <div class="status-bar">
+          <span class="timer status-bar__timer" id="snippet-timer">TRANSCRIPT EDITOR</span>
+        </div>
+        <textarea id="transcript-editor" class="editor-textarea" placeholder="Transcript will appear here..."></textarea>
+      </section>
+
+      <div class="recording-controls" aria-label="Editor controls">
+        <button class="mic-button" type="button" id="edit-button" aria-label="Editing active">
+          <img src="assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="control-button__icon control-button__icon--mic">
+        </button>
+      </div>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="bottom-nav__item" type="button" aria-label="Chat">
+        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Chat" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Profile">
+        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Recorder">
+        <img src="assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Edit Transcript">
+        <img src="assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Android">
+        <img src="assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="bottom-nav__icon">
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? "http://127.0.0.1:7000"
+        : (window.API_BASE_URL || "http://127.0.0.1:7000");
+
+      const editor = document.getElementById('transcript-editor');
+
+      async function loadLatestTranscript() {
+        try {
+          const response = await fetch(${API_BASE}/api/chits);
+          if (!response.ok) {
+            return;
+          }
+          const records = await response.json();
+          if (!Array.isArray(records) || !records.length) {
+            editor.value = '';
+            return;
+          }
+          const latest = records[records.length - 1];
+          editor.value = latest.transcript || '';
+          editor.scrollTop = 0;
+        } catch (error) {
+          console.warn('Failed to load transcript', error);
+        }
+      }
+
+      loadLatestTranscript();
+    })();
+  </script>
+</body>
+</html>

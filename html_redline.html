@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
   <title>WhisPTT Terminal Mockup</title>
   <link rel="stylesheet" href="assets/css/theme.css">
 </head>
@@ -13,29 +14,45 @@
         <div class="status-bar">
           <span class="timer status-bar__timer" id="snippet-timer">00:00.0</span>
         </div>
-
-                <p class="transcription-placeholder" id="transcription-placeholder" style="display: block;">Transcription appears here</p>
+        <p class="transcription-placeholder" id="transcription-placeholder">Transcription appears here</p>
         <div class="transcription-log" id="transcription-log" aria-live="polite"></div>
       </section>
 
       <div class="recording-controls" aria-label="Recording controls">
-        <button class="control-button" type="button" id="action-left" aria-label="Left action">
-          <img src="assets/html-icons/bookmark-icon.svg" alt="Bookmark action" class="control-button__icon">
+        <button class="control-button control-button--ghost" type="button" id="action-left" aria-label="Left action">
+          <img src="assets/lower-menu-svg-icons/1. refresh-icon.svg" alt="Placeholder" class="control-button__icon">
         </button>
         <button class="mic-button" type="button" id="mic-button" aria-label="Tap to record">
-          <img src="assets/html-icons/mic-icon.svg" alt="Microphone" class="control-button__icon control-button__icon--mic">
+          <img src="assets/lower-menu-svg-icons/2. mic-icon.svg" alt="Microphone" class="control-button__icon control-button__icon--mic">
         </button>
-        <button class="control-button" type="button" id="action-right" aria-label="Finish session">
-          <img src="assets/html-icons/pencil-neon.svg" alt="Finalize session" class="control-button__icon">
+        <button class="control-button control-button--ghost" type="button" id="action-right" aria-label="Right action">
+          <img src="assets/lower-menu-svg-icons/3.clipboard-icon.svg" alt="Placeholder" class="control-button__icon">
         </button>
         <p class="status-text" id="status-text">Tap the button to start</p>
       </div>
     </main>
 
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="bottom-nav__item" type="button" aria-label="Chat">
+        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Chat" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Profile">
+        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Recorder">
+        <img src="assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Edit Transcript" id="nav-editor">
+        <img src="assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Android">
+        <img src="assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="bottom-nav__icon">
+      </button>
+    </nav>
   </div>
 
   <script>
-    (function () {
+(function () {
       /* <span style="color: red;">
       const API_BASE = "http://127.0.0.1:7000";
       </span> */
@@ -452,7 +469,15 @@ function stopLivePolling() {
       ensureHistoryVisible();
     })();
   </script>
-
-
-
-</body></html>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const navEditorButton = document.getElementById('nav-editor');
+      if (navEditorButton) {
+        navEditorButton.addEventListener('click', function () {
+          window.location.href = 'html_editor.html';
+        });
+      }
+    });
+  </script>
+</body>
+</html>

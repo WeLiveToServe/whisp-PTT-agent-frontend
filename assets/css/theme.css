@@ -13,6 +13,7 @@
       --nav-bg: #060606;
       --shadow-outer: 0 20px 60px rgba(0, 0, 0, 0.75);
       --shadow-inner: inset 0 0 40px rgba(0, 0, 0, 0.5);
+      --bottom-nav-height: 70px;
       --font-terminal: "Cascadia Code", "Fira Code", "IBM Plex Mono", "Courier New", monospace;
     }
 
@@ -70,7 +71,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
-      padding: 0.4rem 0.6rem 1rem;
+      padding: 0.4rem 0.6rem calc(1rem + var(--bottom-nav-height, 70px));
       background: var(--black-800);
       box-shadow: var(--shadow-inner);
       position: relative;
@@ -86,7 +87,7 @@
       border: 2px solid var(--panel-line-strong);
       border-radius: 22px;
       background: linear-gradient(180deg, rgba(10, 10, 10, 0.95) 0%, rgba(5, 5, 5, 0.9) 100%);
-      padding: 0.75rem 1rem 1.1rem;
+      padding: 0.75rem 1rem calc(1.1rem + var(--mic-button-size, 68px) + var(--bottom-nav-height, 70px));
       display: flex;
       flex-direction: column;
       gap: 0.9rem;
@@ -213,14 +214,13 @@
 
     .recording-controls {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
       column-gap: 1.2rem;
-      row-gap: 0.6rem;
-      margin-top: auto;
-      padding: 0.25rem 0 0.8rem;
-      position: relative;
+      position: absolute;
+      left: 50%;
+      bottom: calc(var(--bottom-nav-height, 70px) + 0.4rem);
+      transform: translateX(-50%);
     }
 
     .mic-button,
@@ -229,8 +229,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: var(--mic-button-size, 68px);
-      height: var(--mic-button-size, 68px);
+      width: calc(var(--mic-button-size, 68px) * 0.88);
+      height: calc(var(--mic-button-size, 68px) * 0.88);
       margin: 0;
       border-radius: 50%;
       border: 2px solid var(--matrix-green);
@@ -247,22 +247,22 @@
       z-index: 1;
     }
 
-    .recording-controls .status-text {
-      flex-basis: 100%;
-      margin-top: 0.4rem;
-    }
-
     .control-button__icon {
       width: 34px;
       height: 34px;
       filter: drop-shadow(0 0 8px rgba(59, 255, 101, 0.45));
       pointer-events: none;
     }
-
     .control-button__icon--mic {
       width: 38px;
       height: 38px;
     }
+
+    .control-button--ghost {
+      display: none;
+    }
+
+
 
     .control-button:hover,
     .control-button:focus-visible {
@@ -275,6 +275,11 @@
       opacity: 0.45;
       cursor: not-allowed;
       box-shadow: none;
+    }
+
+    .mic-button {
+      width: var(--mic-button-size, 68px);
+      height: var(--mic-button-size, 68px);
     }
 
     .mic-button::before {
@@ -364,3 +369,54 @@
       height: 26px;
       filter: drop-shadow(0 0 6px rgba(59, 255, 101, 0.35));
     }
+
+
+
+
+
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: var(--bottom-nav-height, 70px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(59, 255, 101, 0.22) 0%, rgba(59, 255, 101, 0.06) 100%);
+      border-top: 1px solid rgba(59, 255, 101, 0.25);
+      box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.6);
+      z-index: 5;
+    }
+
+    .bottom-nav__item {
+      background: none;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 160ms ease;
+    }
+
+    .bottom-nav__item:hover,
+    .bottom-nav__item:focus-visible,
+    .bottom-nav__item--active {
+      box-shadow: 0 0 14px rgba(59, 255, 101, 0.45);
+      outline: none;
+      transform: translateY(-2px);
+    }
+
+    .bottom-nav__icon {
+      width: 28px;
+      height: 28px;
+      filter: drop-shadow(0 0 6px rgba(59, 255, 101, 0.45));
+      pointer-events: none;
+    }
+
+
+
