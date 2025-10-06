@@ -82,6 +82,8 @@ class RecorderService:
         self._hop_seconds = 1.0
         self._sample_rate = recorder_redline.DEFAULT_SAMPLE_RATE
         self._channels = recorder_redline.DEFAULT_CHANNELS
+        self._max_duration_seconds = 30.0
+        self._stream_deadline: Optional[float] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -96,6 +98,7 @@ class RecorderService:
             self._result_queue = queue.Queue()
             self._stream_queue = queue.Queue()
             self._stream_stop = threading.Event()
+            self._stream_deadline = (time.monotonic() + self._max_duration_seconds) if self._max_duration_seconds > 0 else None
             self._last_result = None
             self._last_error = None
             self._virtual_keys.reset()
@@ -199,6 +202,7 @@ class RecorderService:
             self._stream_thread = None
             self._last_result = None
             self._current_recording_id = None
+            self._stream_deadline = None
         return result
 
     def status(self) -> str:
@@ -238,6 +242,13 @@ class RecorderService:
         chunks_dir.mkdir(parents=True, exist_ok=True)
 
         while not self._stream_stop.is_set() or not self._stream_queue.empty():
+            if self._stream_deadline is not None and time.monotonic() >= self._stream_deadline:
+                self._stream_stop.set()
+                self._stream_deadline = None
+                self._virtual_keys.set_space(False)
+                self._virtual_keys.tap_backspace()
+                continue
+
             try:
                 frame = self._stream_queue.get(timeout=0.1)
             except queue.Empty:
