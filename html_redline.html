@@ -61,12 +61,14 @@
       let exportInFlight = false;
       let snippetTimerId = null;
       let snippetStartTime = null;
+      let livePollTimerId = null;
 
       /* <span style="color: blue;">
       ADDED: Configuration constants for timer precision and animation chunking
       </span> */
       const TIMER_UPDATE_INTERVAL_MS = 100;
       const TYPEWRITER_TOTAL_CHUNKS = 120;  // Controls animation speed
+      const LIVE_POLL_INTERVAL_MS = 1000;
 
       function setStatus(message, tone) {
         statusText.textContent = message;
@@ -122,8 +124,64 @@
         while (log.firstChild) {
           log.removeChild(log.firstChild);
         }
+        clearLiveSegments();
         ensureHistoryVisible();
       }
+
+
+function clearLiveSegments() {
+  document.querySelectorAll('.transcription-entry--live').forEach((node) => node.remove());
+}
+
+function renderLiveSegments(segments) {
+  clearLiveSegments();
+  if (!Array.isArray(segments) || !segments.length) {
+    return;
+  }
+  segments.forEach((segment) => {
+    const article = document.createElement('article');
+    article.className = 'transcription-entry transcription-entry--live';
+    article.dataset.liveSegment = `${segment.recording_id || ''}:${segment.chunk_index}`;
+    const textEl = document.createElement('p');
+    textEl.textContent = segment.text || '';
+    article.appendChild(textEl);
+    log.appendChild(article);
+  });
+  log.scrollTop = log.scrollHeight;
+  ensureHistoryVisible();
+}
+
+async function pollLiveSegments() {
+  if (!isRecording) {
+    return;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/api/live`);
+    if (!response.ok) {
+      return;
+    }
+    const data = await response.json();
+    renderLiveSegments(data.segments || []);
+  } catch (error) {
+    console.warn('Live polling failed', error);
+  }
+}
+
+function startLivePolling() {
+  if (livePollTimerId) {
+    return;
+  }
+  pollLiveSegments();
+  livePollTimerId = setInterval(pollLiveSegments, LIVE_POLL_INTERVAL_MS);
+}
+
+function stopLivePolling() {
+  if (livePollTimerId) {
+    clearInterval(livePollTimerId);
+    livePollTimerId = null;
+  }
+  clearLiveSegments();
+}
 
       async function exportSession() {
         if (exportInFlight) {
@@ -267,6 +325,7 @@
         } else if (wasRecording) {
           stopSnippetTimer(true);
         }
+        stopLivePolling();
         setStatus(statusMessage, statusTone);
       }
 
@@ -307,6 +366,7 @@
           if (!response.ok) {
             throw new Error(data.error || "Recording stop failed");
           }
+          clearLiveSegments();
           renderEntry(data);
           exitRecordingState({ statusTone: "success", statusMessage: "Tap the button to start" });
         } catch (error) {

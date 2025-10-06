@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import Column, DateTime, String, Boolean, create_engine
+from sqlalchemy import Column, DateTime, String, Boolean, Integer, Float, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 DB_PATH = Path("sessions") / "device.db"
@@ -21,9 +21,24 @@ class ChitRecord(Base):
     __tablename__ = "chits"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    recording_id = Column(String, nullable=True)
     audio_path = Column(String, nullable=False)
     transcript = Column(String, nullable=False)
     mocked = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class LiveSegment(Base):
+    __tablename__ = "live_segments"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    recording_id = Column(String, nullable=False)
+    chunk_index = Column(Integer, nullable=False)
+    start_ms = Column(Float, nullable=False)
+    end_ms = Column(Float, nullable=False)
+    text = Column(String, nullable=False)
+    mocked = Column(Boolean, default=False, nullable=False)
+    finalized = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 

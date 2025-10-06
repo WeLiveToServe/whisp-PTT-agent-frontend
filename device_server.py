@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-from device.database import ChitRecord, db_session, init_db
+from device.database import ChitRecord, LiveSegment, db_session, init_db
 from device.recorder_service import RecorderBusyError, RecorderIdleError, recorder_service
 from device.transcription import transcribe
 
@@ -31,6 +31,7 @@ app.add_middleware(
 
 class ChitResponse(BaseModel):
     id: str
+    recording_id: str | None
     audio_path: str
     transcript: str
     mocked: bool
@@ -39,7 +40,24 @@ class ChitResponse(BaseModel):
 
 class StatusResponse(BaseModel):
     status: str
-    last_error: str | None
+    recording_id: str | None = None
+    last_error: str | None = None
+
+
+class LiveSegmentResponse(BaseModel):
+    recording_id: str
+    chunk_index: int
+    start_ms: float
+    end_ms: float
+    text: str
+    mocked: bool
+    finalized: bool
+
+
+class LiveStatusResponse(BaseModel):
+    status: str
+    recording_id: str | None
+    segments: List[LiveSegmentResponse]
 
 
 @app.on_event("startup")
@@ -50,13 +68,13 @@ async def on_startup() -> None:
 @app.post("/api/record/start", response_model=StatusResponse)
 async def api_record_start() -> StatusResponse:
     try:
-        recorder_service.start()
+        recording_id = recorder_service.start()
     except RecorderBusyError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - defensive guard
         logger.exception("Failed to start recording")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-    return StatusResponse(status="recording", last_error=None)
+    return StatusResponse(status="recording", recording_id=recording_id, last_error=None)
 
 
 @app.post("/api/record/stop", response_model=ChitResponse)
@@ -74,13 +92,20 @@ async def api_record_stop() -> ChitResponse:
         raise HTTPException(status_code=500, detail="Recorder did not provide audio path")
 
     transcript_text, mocked = transcribe(audio_path)
+    recording_id = result.get("recording_id")
 
     with db_session() as session:
-        record = ChitRecord(audio_path=audio_path, transcript=transcript_text, mocked=mocked)
+        record = ChitRecord(
+            recording_id=recording_id,
+            audio_path=audio_path,
+            transcript=transcript_text,
+            mocked=mocked,
+        )
         session.add(record)
         session.flush()
         payload = ChitResponse(
             id=record.id,
+            recording_id=recording_id,
             audio_path=audio_path,
             transcript=transcript_text,
             mocked=mocked,
@@ -97,6 +122,7 @@ async def api_list_chits() -> List[ChitResponse]:
         return [
             ChitResponse(
                 id=record.id,
+                recording_id=record.recording_id,
                 audio_path=record.audio_path,
                 transcript=record.transcript,
                 mocked=record.mocked,
@@ -106,9 +132,47 @@ async def api_list_chits() -> List[ChitResponse]:
         ]
 
 
+
+@app.get("/api/live", response_model=LiveStatusResponse)
+async def api_live() -> LiveStatusResponse:
+    recording_id = recorder_service.current_recording_id()
+    segments: List[LiveSegmentResponse] = []
+    with db_session() as session:
+        if recording_id:
+            records = (
+                session.query(LiveSegment)
+                .filter(LiveSegment.recording_id == recording_id)
+                .order_by(LiveSegment.chunk_index.asc())
+                .all()
+            )
+        else:
+            records = []
+        for record in records:
+            segments.append(
+                LiveSegmentResponse(
+                    recording_id=record.recording_id,
+                    chunk_index=record.chunk_index,
+                    start_ms=record.start_ms,
+                    end_ms=record.end_ms,
+                    text=record.text,
+                    mocked=record.mocked,
+                    finalized=record.finalized,
+                )
+            )
+    return LiveStatusResponse(
+        status=recorder_service.status(),
+        recording_id=recording_id,
+        segments=segments,
+    )
+
+
 @app.get("/api/status", response_model=StatusResponse)
 async def api_status() -> StatusResponse:
-    return StatusResponse(status=recorder_service.status(), last_error=recorder_service.last_error())
+    return StatusResponse(
+        status=recorder_service.status(),
+        recording_id=recorder_service.current_recording_id(),
+        last_error=recorder_service.last_error(),
+    )
 
 
 @app.post("/api/session/export")
@@ -133,6 +197,7 @@ async def api_export_session() -> dict:
     combined_text = "\n\n".join(filter(None, combined))
     with db_session() as session:
         session.query(ChitRecord).delete()
+        session.query(LiveSegment).delete()
     return {"status": "exported", "export_path": str(export_path), "entries": len(records), "combined_transcript": combined_text}
 
 
@@ -140,6 +205,7 @@ async def api_export_session() -> dict:
 async def api_clear_transcripts() -> StatusResponse:
     with db_session() as session:
         session.query(ChitRecord).delete()
+        session.query(LiveSegment).delete()
     return StatusResponse(status="cleared", last_error=None)
 
 

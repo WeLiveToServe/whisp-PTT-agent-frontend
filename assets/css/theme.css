@@ -154,6 +154,11 @@
       transform-origin: top;
     }
 
+    .transcription-entry--live p {
+      color: var(--text-soft);
+      font-style: italic;
+    }
+
     .transcription-entry--new {
       /* <span style="color: red;">
       animation: slideUp 200ms ease-out;

@@ -4,10 +4,12 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Callable, Optional
 
 import keyboard
 import sounddevice as sd
 import soundfile as sf
+import numpy as np
 
 import ui
 
@@ -40,6 +42,7 @@ def record_push_to_talk(
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     channels: int = DEFAULT_CHANNELS,
     output_dir: Path | str = RECORDER_DIR,
+    frame_consumer: Optional[Callable[[np.ndarray], None]] = None,
 ) -> str:
     """Record while the space bar is pressed and persist audio to disk."""
 
@@ -93,13 +96,19 @@ def record_push_to_talk(
                         break
                     continue
 
+                if frame_consumer is not None:
+                    frame_consumer(chunk)
+
                 wav_file.write(chunk)
 
                 if stop_requested and audio_queue.empty():
                     break
 
             while not audio_queue.empty():
-                wav_file.write(audio_queue.get())
+                chunk = audio_queue.get()
+                if frame_consumer is not None:
+                    frame_consumer(chunk)
+                wav_file.write(chunk)
 
     indicator_flag[0] = False
     indicator_thread.join(timeout=1)
