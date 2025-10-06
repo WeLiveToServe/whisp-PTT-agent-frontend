@@ -12,3 +12,4 @@ soundfile
 PyYAML
 fastapi
 uvicorn
+SQLAlchemy

@@ -37,7 +37,7 @@
   <script>
     (function () {
       /* <span style="color: red;">
-      const API_BASE = "http://127.0.0.1:8000";
+      const API_BASE = "http://127.0.0.1:7000";
       </span> */
       /* <span style="color: blue;">
       CHANGED: Hardcoded localhost URL prevents deployment to other environments.
@@ -45,8 +45,8 @@
       uses configurable base. In production, this should read from env config.
       </span> */
       const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-        ? "http://127.0.0.1:8000"
-        : (window.API_BASE_URL || "http://127.0.0.1:8000");
+        ? "http://127.0.0.1:7000"
+        : (window.API_BASE_URL || "http://127.0.0.1:7000");
 
       const micButton = document.getElementById("mic-button");
       const bookmarkButton = document.getElementById("action-left");
@@ -171,10 +171,10 @@
 
       function renderEntry(entry, options = {}) {
         const { scroll = true, animate = true } = options;
-        const identifier = entry.audio_path || entry.timestamp || "";
+        const identifier = entry.id || entry.audio_path || entry.created_at || "";
         const existingLast = log.lastElementChild;
         if (identifier && existingLast) {
-          const existingId = existingLast.dataset.audioPath || existingLast.dataset.timestamp || "";
+          const existingId = existingLast.dataset.chitId || existingLast.dataset.audioPath || existingLast.dataset.timestamp || "";
           if (existingId === identifier) {
             ensureHistoryVisible();
             return;
@@ -183,10 +183,13 @@
 
         const article = document.createElement("article");
         article.className = "transcription-entry transcription-entry--new";
-        article.dataset.timestamp = entry.timestamp || new Date().toISOString();
+        if (entry.id) {
+          article.dataset.chitId = entry.id;
+        }
         if (entry.audio_path) {
           article.dataset.audioPath = entry.audio_path;
         }
+        article.dataset.timestamp = entry.created_at || new Date().toISOString();
 
         const text = document.createElement("p");
         article.appendChild(text);
@@ -369,23 +372,18 @@
 
       async function hydrateHistory() {
         try {
-          const response = await fetch(`${API_BASE}/api/status`);
+          const response = await fetch(`${API_BASE}/api/chits`);
           if (!response.ok) {
             return;
           }
-          const data = await response.json();
-          /* <span style="color: blue;">
-          WARNING: This prepends ALL history entries on page load. If transcript_store
-          accumulates hundreds of entries, this will cause performance issues. Consider
-          implementing pagination or only loading the most recent N entries.
-          </span> */
-          (data.history || []).forEach((entry) => {
+          const records = await response.json();
+          records.forEach((entry) => {
             renderEntry(entry, { scroll: false, animate: false });
           });
           log.scrollTop = log.scrollHeight;
           ensureHistoryVisible();
         } catch (error) {
-          console.warn("Status check failed", error);
+          console.warn("History hydration failed", error);
         }
       }
 
@@ -397,4 +395,3 @@
 
 
 </body></html>
-
