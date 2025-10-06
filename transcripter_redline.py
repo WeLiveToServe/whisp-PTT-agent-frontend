@@ -4,11 +4,22 @@ from openai import OpenAI
 import sys, time
 from rich.console import Console
 import io
+from typing import Optional
 
 console = Console()
 
 # Create a client
 client = OpenAI()
+
+
+def transcribe_whisper_file(audio_path: str, prompt: Optional[str] = None) -> str:
+    """Transcribe a single audio file with Whisper-1 and return raw text."""
+    with open(audio_path, "rb") as audio_file:
+        kwargs = {"model": "whisper-1", "file": audio_file}
+        if prompt:
+            kwargs["prompt"] = prompt
+        transcript = client.audio.transcriptions.create(**kwargs)
+    return (getattr(transcript, "text", "") or "").strip()
 
 def transcribe_and_enhance(audio_path):
     """

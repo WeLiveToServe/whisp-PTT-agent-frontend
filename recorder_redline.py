@@ -15,7 +15,7 @@ import ui
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SAMPLE_RATE = 44100
+DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_CHANNELS = 1
 BUFFER_FLUSH_SECONDS = 0.05
 POLL_SLEEP_SECONDS = 0.05
@@ -96,6 +96,11 @@ def record_push_to_talk(
                         break
                     continue
 
+
+                if channels == 1 and getattr(chunk, "ndim", 1) > 1:
+                    # Downmix extra channels to mono if the driver delivers more than requested
+                    chunk = chunk.mean(axis=1)
+
                 if frame_consumer is not None:
                     frame_consumer(chunk)
 
@@ -104,11 +109,15 @@ def record_push_to_talk(
                 if stop_requested and audio_queue.empty():
                     break
 
+
             while not audio_queue.empty():
                 chunk = audio_queue.get()
+                if channels == 1 and getattr(chunk, "ndim", 1) > 1:
+                    chunk = chunk.mean(axis=1)
                 if frame_consumer is not None:
                     frame_consumer(chunk)
                 wav_file.write(chunk)
+
 
     indicator_flag[0] = False
     indicator_thread.join(timeout=1)

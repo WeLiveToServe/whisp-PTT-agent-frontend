@@ -1,7 +1,3 @@
-#IGNORE DOWNLOADED REPOS
-whisper.cpp/
-
-
 # Git internals
 .git/
 
@@ -24,3 +20,4 @@ sessions/
 # OS/system files
 .DS_Store
 Thumbs.db
+

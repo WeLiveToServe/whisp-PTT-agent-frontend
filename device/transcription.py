@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 try:
     import transcripter_redline
@@ -23,3 +23,21 @@ def transcribe(audio_path: str) -> Tuple[str, bool]:
         transcript = "[Empty transcript]"
         mocked = True
     return transcript, mocked
+
+
+def transcribe_live_chunk(audio_path: str, prompt_text: Optional[str] = None) -> Tuple[str, bool]:
+    """Transcribe a short audio chunk via OpenAI Whisper."""
+    if transcripter_redline is None:
+        filename = Path(audio_path).name
+        return f"[Transcript unavailable for {filename}]", True
+
+    try:
+        raw_text = transcripter_redline.transcribe_whisper_file(audio_path, prompt_text)
+    except Exception as exc:  # pragma: no cover - network failure or client issues
+        return f"[transcription error: {exc}]", True
+
+    transcript = (raw_text or "").strip()
+    if not transcript:
+        return "[Empty transcript]", True
+    return transcript, False
+

@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 import recorder_redline
 from device.database import LiveSegment, db_session
-from device import whispercpp_runner
+from device.transcription import transcribe_live_chunk
 
 logger = logging.getLogger(__name__)
 
@@ -292,9 +292,9 @@ class RecorderService:
         writable = data if data.shape[1] > 1 else data.reshape(-1)
         sf.write(temp_path, writable, sample_rate)
         try:
-            text, mocked = whispercpp_runner.transcribe_chunk(temp_path, prompt_text)
+            text, mocked = transcribe_live_chunk(temp_path, prompt_text)
         except Exception as exc:  # pragma: no cover - defensive logging
-            logger.exception("whisper.cpp chunk transcription failed")
+            logger.exception("Chunk transcription failed")
             text = f"[transcription error: {exc}]"
             mocked = True
         finally:

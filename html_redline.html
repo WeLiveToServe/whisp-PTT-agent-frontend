@@ -313,6 +313,7 @@ function stopLivePolling() {
         micButton.classList.add("mic-button--armed");
         setStatus("Recording... tap to stop");
         startSnippetTimer();
+        startLivePolling();
       }
 
       function exitRecordingState({ resetSnippet = false, statusTone = null, statusMessage = "Tap the button to start" } = {}) {
