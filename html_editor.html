@@ -72,10 +72,29 @@
         : (window.API_BASE_URL || "http://127.0.0.1:7000");
 
       const editor = document.getElementById('transcript-editor');
+      const editorMicButton = document.getElementById('edit-button');
+      const STORAGE_KEY = 'whisptt.editorPrefill';
+
+      function consumePrefill() {
+        try {
+          const raw = sessionStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return null;
+          }
+          sessionStorage.removeItem(STORAGE_KEY);
+          const payload = JSON.parse(raw);
+          if (payload && typeof payload.text === 'string' && payload.text.trim().length) {
+            return payload.text;
+          }
+        } catch (error) {
+          console.warn('Failed to read editor prefill', error);
+        }
+        return null;
+      }
 
       async function loadLatestTranscript() {
         try {
-          const response = await fetch(${API_BASE}/api/chits);
+          const response = await fetch(`${API_BASE}/api/chits`);
           if (!response.ok) {
             return;
           }
@@ -92,8 +111,22 @@
         }
       }
 
-      loadLatestTranscript();
+      const prefill = consumePrefill();
+      if (prefill !== null) {
+        editor.value = prefill;
+        editor.scrollTop = 0;
+      } else {
+        loadLatestTranscript();
+      }
+
+      if (editorMicButton) {
+        editorMicButton.addEventListener('click', () => {
+          window.location.href = 'html_redline.html';
+        });
+      }
     })();
   </script>
 </body>
 </html>
+
+

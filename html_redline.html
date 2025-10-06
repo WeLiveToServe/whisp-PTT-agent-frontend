@@ -72,6 +72,8 @@
       const log = document.getElementById("transcription-log");
       const placeholder = document.getElementById("transcription-placeholder");
       const snippetTimerEl = document.getElementById("snippet-timer");
+      const navEditorButton = document.getElementById("nav-editor");
+      const EDITOR_PREFILL_KEY = "whisptt.editorPrefill";
 
       let isRecording = false;
       let stopInFlight = false;
@@ -146,7 +148,19 @@
       }
 
 
-function clearLiveSegments() {
+function collectTranscriptForEditor() {
+        if (!log) {
+          return "";
+        }
+        const nodes = Array.from(log.querySelectorAll('.transcription-entry:not(.transcription-entry--live) p'));
+        const combined = nodes
+          .map((node) => node.textContent.trim())
+          .filter(Boolean)
+          .join("\n\n");
+        return combined;
+      }
+
+      function clearLiveSegments() {
   document.querySelectorAll('.transcription-entry--live').forEach((node) => node.remove());
 }
 
@@ -448,7 +462,20 @@ function stopLivePolling() {
         exportSession();
       });
 
-      async function hydrateHistory() {
+      if (navEditorButton) {
+        navEditorButton.dataset.editorNavWired = "true";
+        navEditorButton.addEventListener("click", () => {
+          const textForEditor = collectTranscriptForEditor();
+          try {
+            sessionStorage.setItem(EDITOR_PREFILL_KEY, JSON.stringify({ text: textForEditor, createdAt: new Date().toISOString() }));
+          } catch (storageError) {
+            console.warn("Failed to cache transcript for editor", storageError);
+          }
+          window.location.href = "html_editor.html";
+        });
+      }
+
+            async function hydrateHistory() {
         try {
           const response = await fetch(`${API_BASE}/api/chits`);
           if (!response.ok) {
@@ -472,7 +499,7 @@ function stopLivePolling() {
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const navEditorButton = document.getElementById('nav-editor');
-      if (navEditorButton) {
+      if (navEditorButton && !navEditorButton.dataset.editorNavWired) {
         navEditorButton.addEventListener('click', function () {
           window.location.href = 'html_editor.html';
         });
