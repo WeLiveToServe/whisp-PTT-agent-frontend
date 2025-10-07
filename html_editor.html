@@ -47,17 +47,19 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button class="bottom-nav__item" type="button" aria-label="Chat">`r`n        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Chat" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Chat" id="nav-chat">
+        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Chat" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item" type="button" aria-label="Profile">`r`n        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Profile" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Profile" id="nav-profile">
+        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item" type="button" aria-label="Recorder" id="nav-recorder">
         <img src="assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Edit Transcript">
+      <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Edit Transcript" id="nav-editor">
         <img src="assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item" type="button" aria-label="Android">
+      <button class="bottom-nav__item" type="button" aria-label="Android" id="nav-android">
         <img src="assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="bottom-nav__icon">
       </button>
     </nav>
@@ -75,6 +77,7 @@
       const navAndroidButton = document.getElementById('nav-android');
       const navChatButton = document.getElementById('nav-chat');
       const navProfileButton = document.getElementById('nav-profile');
+      const navEditorButton = document.getElementById('nav-editor');
       const STORAGE_KEY = 'whisptt.editorPrefill';
 
       function consumePrefill() {
@@ -121,34 +124,16 @@
         loadLatestTranscript();
       }
 
-      if (navRecorderButton) {
-        navRecorderButton.addEventListener('click', () => {
-          window.location.href = 'html_redline.html';
-        });
-      }
+      const go = (path) => { window.location.href = path; };
 
-      if (navAndroidButton) {
-        navAndroidButton.addEventListener('click', () => {
-          window.location.href = 'html_android.html';
-        });
-      }
-
-      if (navChatButton) {
-        navChatButton.addEventListener('click', () => {
-          window.location.href = 'html_chat.html';
-        });
-      }
-
-      if (navProfileButton) {
-        navProfileButton.addEventListener('click', () => {
-          window.location.href = 'html_profile.html';
-        });
-      }
+      if (navRecorderButton) { navRecorderButton.addEventListener('click', () => go('html_redline.html')); }
+      if (navAndroidButton) { navAndroidButton.addEventListener('click', () => go('html_android.html')); }
+      if (navChatButton) { navChatButton.addEventListener('click', () => go('html_chat.html')); }
+      if (navProfileButton) { navProfileButton.addEventListener('click', () => go('html_profile.html')); }
+      if (navEditorButton) { navEditorButton.addEventListener('click', () => go('html_editor.html')); }
 
       if (editorMicButton) {
-        editorMicButton.addEventListener('click', () => {
-          window.location.href = 'html_redline.html';
-        });
+        editorMicButton.addEventListener('click', () => go('html_redline.html'));
       }
     })();
   </script>

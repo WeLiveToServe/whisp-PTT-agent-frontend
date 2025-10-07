@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WhisPTT Coming Soon</title>
+  <title>WhisPTT · Money Penny</title>
   <link rel="stylesheet" href="assets/css/theme.css">
 </head>
 <body>
@@ -10,20 +10,31 @@
     <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo"></header>
 
     <main class="screen">
-      <section class="transcription-panel" aria-label="Coming soon">
+      <section class="transcription-panel" aria-label="Money Penny agent console">
         <div class="status-bar">
-          <span class="timer status-bar__timer">COMING SOON</span>
+          <span class="timer status-bar__timer">MONEY PENNY</span>
         </div>
-        <div class="transcription-log coming-soon-log" aria-live="polite">
-          <p class="coming-soon-message">We are building this experience. Check back soon for new Android integrations and controls.</p>
+        <div class="agent-panel" aria-live="polite">
+          <p class="agent-panel__blurb">
+            Paste a job description or high-level notes and Money Penny will help draft custom resume bullets,
+            cover letters, or first-contact emails for potential employers.
+          </p>
+          <label class="agent-panel__label" for="agent-input">Job description / context</label>
+          <textarea id="agent-input" class="agent-textarea" placeholder="Paste the job description or key notes here..."></textarea>
+
+          <label class="agent-panel__label" for="agent-instructions">What do you need?</label>
+          <textarea id="agent-instructions" class="agent-textarea agent-textarea--small" placeholder="e.g. Draft a short cover letter that highlights my product marketing background."></textarea>
+
+          <div class="agent-panel__actions">
+            <button type="button" class="agent-button" id="agent-run">Ask Money Penny</button>
+            <button type="button" class="agent-button agent-button--ghost" id="agent-clear">Clear</button>
+          </div>
+          <p class="agent-status-text" id="agent-status" role="status"></p>
+          <div class="agent-output" id="agent-output">
+            <p class="agent-output__placeholder">Drafts will appear here.</p>
+          </div>
         </div>
       </section>
-
-      <div class="recording-controls" aria-label="Return to recorder">
-        <button class="mic-button" type="button" id="android-home-button" aria-label="Back to recorder">
-          <img src="assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="control-button__icon control-button__icon--mic">
-        </button>
-      </div>
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
@@ -47,20 +58,26 @@
 
   <script>
     (function () {
+      const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? "http://127.0.0.1:7000"
+        : (window.API_BASE_URL || "http://127.0.0.1:7000");
+
       const navRecorderButton = document.getElementById('nav-recorder');
       const navEditorButton = document.getElementById('nav-editor');
       const navAndroidButton = document.getElementById('nav-android');
       const navChatButton = document.getElementById('nav-chat');
       const navProfileButton = document.getElementById('nav-profile');
-      const homeButton = document.getElementById('android-home-button');
+      const runButton = document.getElementById('agent-run');
+      const clearButton = document.getElementById('agent-clear');
+      const inputField = document.getElementById('agent-input');
+      const instructionField = document.getElementById('agent-instructions');
+      const statusNode = document.getElementById('agent-status');
+      const outputNode = document.getElementById('agent-output');
 
       const go = (path) => {
         window.location.href = path;
       };
 
-      if (homeButton) {
-        homeButton.addEventListener('click', () => go('html_redline.html'));
-      }
       if (navRecorderButton) {
         navRecorderButton.addEventListener('click', () => go('html_redline.html'));
       }
@@ -75,6 +92,76 @@
       }
       if (navProfileButton) {
         navProfileButton.addEventListener('click', () => go('html_profile.html'));
+      }
+
+      const setStatus = (text, tone) => {
+        statusNode.textContent = text || '';
+        statusNode.className = 'agent-status-text';
+        if (tone) {
+          statusNode.classList.add(`agent-status-text--${tone}`);
+        }
+      };
+
+      const renderOutput = (content) => {
+        outputNode.innerHTML = '';
+        if (!content) {
+          const placeholder = document.createElement('p');
+          placeholder.className = 'agent-output__placeholder';
+          placeholder.textContent = 'Drafts will appear here.';
+          outputNode.appendChild(placeholder);
+          return;
+        }
+        const paragraph = document.createElement('p');
+        paragraph.className = 'agent-output__body';
+        paragraph.textContent = content.trim();
+        outputNode.appendChild(paragraph);
+        outputNode.scrollTop = 0;
+      };
+
+      if (clearButton) {
+        clearButton.addEventListener('click', () => {
+          inputField.value = '';
+          instructionField.value = '';
+          renderOutput('');
+          setStatus('');
+          inputField.focus();
+        });
+      }
+
+      if (runButton) {
+        runButton.addEventListener('click', async () => {
+          const context = inputField.value.trim();
+          const task = instructionField.value.trim() || 'Draft a concise outreach message.';
+
+          if (!context) {
+            setStatus('Please paste a job description or notes first.', 'warn');
+            inputField.focus();
+            return;
+          }
+
+          setStatus('Asking Money Penny…', 'info');
+          renderOutput('');
+          runButton.disabled = true;
+          try {
+            const response = await fetch(`${API_BASE}/api/agent/moneypenny`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: `${context}\n\nRequest: ${task}` }),
+            });
+            if (!response.ok) {
+              const detail = await response.json().catch(() => ({}));
+              throw new Error(detail?.detail || `Request failed (${response.status})`);
+            }
+            const payload = await response.json();
+            renderOutput(payload.output);
+            setStatus('Draft ready.', 'success');
+          } catch (error) {
+            console.warn('Agent request failed', error);
+            setStatus(String(error.message || error), 'error');
+          } finally {
+            runButton.disabled = false;
+          }
+        });
       }
     })();
   </script>

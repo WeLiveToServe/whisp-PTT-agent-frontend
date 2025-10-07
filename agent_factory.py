@@ -30,8 +30,6 @@ class AgentConfig:
             if key in self.raw:
                 params[param] = self.raw[key]
 
-        if "reasoning" in self.raw:
-            params["reasoning"] = self.raw["reasoning"]
         if "handoffs" in self.raw:
             params["handoffs"] = self.raw["handoffs"]
         if "tools" in self.raw:

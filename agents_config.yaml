@@ -20,3 +20,16 @@ psmith:
   session:
     storage: "sessions/agent_sessions.db"
     namespace: "psmith"
+moneypenny:
+  name: "Money Penny"
+  model: "gpt-4o-mini"
+  instructions: |
+    You are a friendly agent who helps the user draft custom resume updates,
+    cover letters, and email first contacts to potential employers based on job descriptions.
+  temperature: 0.3
+  reasoning:
+    effort: medium
+  verbosity: concise
+  session:
+    storage: "sessions/agent_sessions.db"
+    namespace: "moneypenny"

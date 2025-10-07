@@ -14,6 +14,8 @@ import uvicorn
 from device.database import ChitRecord, LiveSegment, db_session, init_db
 from device.recorder_service import RecorderBusyError, RecorderIdleError, recorder_service
 from device.transcription import transcribe
+from agent_factory import AgentRegistry
+from agents import Runner
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -58,6 +60,26 @@ class LiveStatusResponse(BaseModel):
     status: str
     recording_id: str | None
     segments: List[LiveSegmentResponse]
+
+
+class AgentRequest(BaseModel):
+    text: str
+    session_id: str | None = None
+
+
+class AgentResponse(BaseModel):
+    agent_id: str
+    output: str
+    session_id: str | None = None
+
+
+try:
+    _agent_registry = AgentRegistry.from_file("agents_config.yaml")
+except Exception as exc:  # pragma: no cover - defensive
+    logger.warning("Agent registry unavailable: %s", exc)
+    _agent_registry = None
+
+MONEYPENNY_ID = "moneypenny"
 
 
 @app.on_event("startup")
@@ -209,7 +231,25 @@ async def api_clear_transcripts() -> StatusResponse:
     return StatusResponse(status="cleared", last_error=None)
 
 
+@app.post("/api/agent/moneypenny", response_model=AgentResponse)
+async def api_agent_moneypenny(request: AgentRequest) -> AgentResponse:
+    if _agent_registry is None:
+        raise HTTPException(status_code=503, detail="Agent registry not available")
+    try:
+        agent = _agent_registry.build_agent(MONEYPENNY_ID)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Agent '{MONEYPENNY_ID}' not configured") from exc
+
+    session = _agent_registry.build_session(MONEYPENNY_ID, request.session_id)
+    try:
+        result = await Runner.run(agent, request.text, session=session)
+    except Exception as exc:  # pragma: no cover - defensive guard
+        logger.exception("Money Penny agent call failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return AgentResponse(agent_id=MONEYPENNY_ID, output=result.final_output, session_id=request.session_id)
+
+
 if __name__ == "__main__":
     port = int("7000")
     uvicorn.run("device_server:app", host="127.0.0.1", port=port, reload=False)
-

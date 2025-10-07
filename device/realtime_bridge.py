@@ -76,10 +76,10 @@ class RealtimeBridge:
             "output_modalities": ["text"],
             "audio": {
                 "input": {
-                    "format": "pcm16",
+                    "format": {"type": "audio/pcm", "rate": 24000},
                     "turn_detection": None,
                 },
-                "output": {"format": "pcm16"},
+                "output": {"format": {"type": "audio/pcm", "rate": 24000}},
             },
         }
         if self._instructions:

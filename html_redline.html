@@ -22,8 +22,12 @@
         <div class="recording-controls" aria-label="Recording controls">
           <!-- LEFT — Clear -->
           <button class="control-button" id="action-left" aria-label="Clear transcript">
-            <img src="assets/action-menu-svg-icons/refresh.svg"
-                class="control-button__icon" alt="">
+            <svg class="control-button__icon" viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M9 11a8.5 8.5 0 0112.6-3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="18 7 24 7 24 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M23 21a8.5 8.5 0 01-12.6 3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="14 25 8 25 8 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </button>
 
           <!-- CENTRE — Mic -->
@@ -34,26 +38,30 @@
 
           <!-- RIGHT — Copy to clipboard -->
           <button class="control-button" id="action-right" aria-label="Copy transcript to clipboard">
-            <img src="assets/action-menu-svg-icons/clipboard.svg"
-                class="control-button__icon" alt="">
-                  </button>
+            <svg class="control-button__icon" viewBox="0 0 32 32" aria-hidden="true">
+              <rect x="12" y="9" width="12" height="16" rx="2.5" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10 21H8a2 2 0 01-2-2V8a3 3 0 013-3h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
                 </div>
 
         <p id="status-text" class="status-text"></p>        
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button class="bottom-nav__item" type="button" aria-label="Chat">        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Chat" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Chat" id="nav-chat">
+        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Chat" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item" type="button" aria-label="Profile">        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Profile" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Profile" id="nav-profile">
+        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Recorder">
+      <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Recorder" id="nav-recorder">
         <img src="assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item" type="button" aria-label="Edit Transcript" id="nav-editor">
         <img src="assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item" type="button" aria-label="Android">
+      <button class="bottom-nav__item" type="button" aria-label="Android" id="nav-android">
         <img src="assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="bottom-nav__icon">
       </button>
     </nav>
@@ -80,6 +88,7 @@
       const log = document.getElementById("transcription-log");
       const placeholder = document.getElementById("transcription-placeholder");
       const snippetTimerEl = document.getElementById("snippet-timer");
+      const navRecorderButton = document.getElementById("nav-recorder");
       const navEditorButton = document.getElementById("nav-editor");
       const navChatButton = document.getElementById("nav-chat");
       const navProfileButton = document.getElementById("nav-profile");
@@ -486,6 +495,12 @@ function stopLivePolling() {
         });
       }
 
+      if (navRecorderButton) {
+        navRecorderButton.addEventListener("click", () => {
+          window.location.href = "html_redline.html";
+        });
+      }
+
       if (navChatButton) {
         navChatButton.addEventListener("click", () => {
           window.location.href = "html_chat.html";
@@ -528,10 +543,17 @@ function stopLivePolling() {
   </script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      const navRecorderButton = document.getElementById('nav-recorder');
       const navEditorButton = document.getElementById('nav-editor');
       const navAndroidButton = document.getElementById('nav-android');
       const navChatButton = document.getElementById('nav-chat');
       const navProfileButton = document.getElementById('nav-profile');
+      if (navRecorderButton && !navRecorderButton.dataset.recorderNavWired) {
+        navRecorderButton.dataset.recorderNavWired = 'true';
+        navRecorderButton.addEventListener('click', function () {
+          window.location.href = 'html_redline.html';
+        });
+      }
       if (navEditorButton && !navEditorButton.dataset.editorNavWired) {
         navEditorButton.addEventListener('click', function () {
           window.location.href = 'html_editor.html';
