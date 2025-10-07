@@ -2,23 +2,35 @@
 from __future__ import annotations
 
 import logging
+import os
 import queue
 import threading
 import time
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
+import keyboard  # type: ignore
 import numpy as np
 import soundfile as sf
-import keyboard  # type: ignore
 from unittest.mock import patch
 
 import recorder_redline
 from device.database import LiveSegment, db_session
+from device.realtime_bridge import RealtimeBridge, RealtimeBridgeError
 from device.transcription import transcribe_live_chunk
+from transcripter_redline import client as openai_client
 
 logger = logging.getLogger(__name__)
+
+REALTIME_MODEL = os.getenv("WHISP_REALTIME_MODEL", "").strip()
+REALTIME_ENABLED = bool(REALTIME_MODEL)
+REALTIME_SAMPLE_RATE = int(os.getenv("WHISP_REALTIME_SAMPLE_RATE", "24000"))
+REALTIME_INSTRUCTIONS = (
+    os.getenv("WHISP_REALTIME_INSTRUCTIONS")
+    or os.getenv("WHISP_TRANSCRIBE_APP_INSTRUCTIONS")
+    or ""
+)
 
 
 class RecorderBusyError(RuntimeError):
@@ -78,12 +90,18 @@ class RecorderService:
         self._stream_stop = threading.Event()
 
         self._current_recording_id: Optional[str] = None
-        self._window_seconds = 2.0
-        self._hop_seconds = 1.0
+        self._window_seconds = 4.0
+        self._hop_seconds = 2.0
         self._sample_rate = recorder_redline.DEFAULT_SAMPLE_RATE
         self._channels = recorder_redline.DEFAULT_CHANNELS
         self._max_duration_seconds = 30.0
         self._stream_deadline: Optional[float] = None
+        self._realtime_bridge: Optional[RealtimeBridge] = None
+        self._realtime_enabled = REALTIME_ENABLED
+        self._realtime_target_rate = REALTIME_SAMPLE_RATE
+        self._realtime_instructions = REALTIME_INSTRUCTIONS
+        self._prompt_lock = threading.Lock()
+        self._realtime_prompt_tail = ""
 
     # ------------------------------------------------------------------
     # Public API
@@ -102,6 +120,9 @@ class RecorderService:
             self._last_result = None
             self._last_error = None
             self._virtual_keys.reset()
+            self._realtime_prompt_tail = ""
+
+            self._initialize_realtime_bridge(recording_id)
 
             self._stream_thread = threading.Thread(
                 target=self._stream_worker,
@@ -196,6 +217,8 @@ class RecorderService:
 
         if recording_id:
             self._finalize_segments(recording_id)
+
+        self._disable_realtime_bridge()
 
         with self._lock:
             self._thread = None
@@ -299,8 +322,28 @@ class RecorderService:
         start_ms = (start_sample / sample_rate) * 1000
         end_ms = ((start_sample + data.shape[0]) / sample_rate) * 1000
 
-        temp_path = chunks_dir / f"chunk-{chunk_index:05d}.wav"
         writable = data if data.shape[1] > 1 else data.reshape(-1)
+        if self._realtime_bridge is not None:
+            try:
+                streamed = self._realtime_bridge.send_window(
+                    chunk_index=chunk_index,
+                    start_ms=start_ms,
+                    end_ms=end_ms,
+                    audio=writable,
+                )
+            except RealtimeBridgeError as exc:
+                logger.warning("Realtime streaming failed; reverting to Whisper pipeline: %s", exc)
+                self._disable_realtime_bridge()
+            else:
+                if streamed:
+                    return self._current_prompt_tail()
+                logger.debug(
+                    "Realtime chunk too short; falling back to Whisper (recording=%s, chunk=%s)",
+                    recording_id,
+                    chunk_index,
+                )
+
+        temp_path = chunks_dir / f"chunk-{chunk_index:05d}.wav"
         sf.write(temp_path, writable, sample_rate)
         try:
             text, mocked = transcribe_live_chunk(temp_path, prompt_text)
@@ -327,9 +370,95 @@ class RecorderService:
             return prompt_text
 
         merged_prompt = f"{prompt_text or ''} {text}".strip()
-        if len(merged_prompt) > 500:
-            merged_prompt = merged_prompt[-500:]
+        if len(merged_prompt) > 2500:
+            merged_prompt = merged_prompt[-2500:]
         return merged_prompt
+
+    def _initialize_realtime_bridge(self, recording_id: str) -> None:
+        self._disable_realtime_bridge()
+        if not (self._realtime_enabled and REALTIME_MODEL):
+            return
+        try:
+            bridge = RealtimeBridge(
+                client=openai_client,
+                model=REALTIME_MODEL,
+                recording_id=recording_id,
+                input_sample_rate=self._sample_rate,
+                target_sample_rate=self._realtime_target_rate,
+                instructions=self._realtime_instructions,
+                on_transcript=self._handle_realtime_transcript,
+            )
+            bridge.start()
+        except RealtimeBridgeError as exc:
+            logger.warning("Realtime bridge unavailable, falling back to Whisper pipeline: %s", exc)
+            self._realtime_enabled = False
+            self._realtime_bridge = None
+        else:
+            self._realtime_bridge = bridge
+
+    def _disable_realtime_bridge(self) -> None:
+        bridge = self._realtime_bridge
+        if bridge is not None:
+            try:
+                bridge.stop()
+            except Exception:  # pragma: no cover - defensive
+                logger.debug("Realtime bridge stop failed", exc_info=True)
+        self._realtime_bridge = None
+        with self._prompt_lock:
+            self._realtime_prompt_tail = ""
+
+    def _handle_realtime_transcript(self, metadata: Dict[str, str], text: str, finalized: bool) -> None:
+        recording_id = metadata.get("recording_id")
+        if not recording_id or recording_id != self._current_recording_id:
+            return
+        try:
+            chunk_index = int(metadata.get("chunk_index", "0"))
+            start_ms = float(metadata.get("start_ms", "0") or 0.0)
+            end_ms = float(metadata.get("end_ms", "0") or 0.0)
+        except ValueError:
+            return
+
+        cleaned_text = text.strip()
+        if finalized and not cleaned_text:
+            cleaned_text = "[Empty transcript]"
+
+        with db_session() as session:
+            segment = (
+                session.query(LiveSegment)
+                .filter(
+                    LiveSegment.recording_id == recording_id,
+                    LiveSegment.chunk_index == chunk_index,
+                )
+                .one_or_none()
+            )
+            if segment is None:
+                segment = LiveSegment(
+                    recording_id=recording_id,
+                    chunk_index=chunk_index,
+                    start_ms=start_ms,
+                    end_ms=end_ms,
+                    text=cleaned_text,
+                    mocked=False,
+                    finalized=finalized,
+                )
+                session.add(segment)
+            else:
+                segment.start_ms = start_ms
+                segment.end_ms = end_ms
+                segment.text = cleaned_text
+                segment.mocked = False
+                segment.finalized = finalized
+
+        if finalized and cleaned_text:
+            with self._prompt_lock:
+                merged = f"{self._realtime_prompt_tail} {cleaned_text}".strip()
+                if len(merged) > 2500:
+                    merged = merged[-2500:]
+                self._realtime_prompt_tail = merged
+
+    def _current_prompt_tail(self) -> str:
+        with self._prompt_lock:
+            return self._realtime_prompt_tail
 
     def _finalize_segments(self, recording_id: str) -> None:
         with db_session() as session:

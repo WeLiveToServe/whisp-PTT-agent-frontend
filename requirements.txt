@@ -13,3 +13,4 @@ PyYAML
 fastapi
 uvicorn
 SQLAlchemy
+websockets

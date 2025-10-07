@@ -18,18 +18,28 @@
         <div class="transcription-log" id="transcription-log" aria-live="polite"></div>
       </section>
 
-      <div class="recording-controls" aria-label="Recording controls">
-        <button class="control-button" type="button" id="action-left" aria-label="Left action">
-          <img src="assets/lower-menu-svg-icons/1. refresh-icon.svg" alt="Placeholder" class="control-button__icon">
-        </button>
-        <button class="mic-button" type="button" id="mic-button" aria-label="Tap to record">
-          <img src="assets/lower-menu-svg-icons/2. mic-icon.svg" alt="Microphone" class="control-button__icon control-button__icon--mic">
-        </button>
-        <button class="control-button" type="button" id="action-right" aria-label="Right action">
-          <img src="assets/lower-menu-svg-icons/3.clipboard-icon.svg" alt="Placeholder" class="control-button__icon">
-        </button>
-        
-      </div>
+        <!-- recording-controls -->
+        <div class="recording-controls" aria-label="Recording controls">
+          <!-- LEFT — Clear -->
+          <button class="control-button" id="action-left" aria-label="Clear transcript">
+            <img src="assets/action-menu-svg-icons/refresh.svg"
+                class="control-button__icon" alt="">
+          </button>
+
+          <!-- CENTRE — Mic -->
+          <button class="mic-button" id="mic-button" aria-label="Tap to record">
+            <img src="assets/action-menu-svg-icons/mic-simple.svg"
+                class="control-button__icon control-button__icon--mic" alt="">
+          </button>
+
+          <!-- RIGHT — Copy to clipboard -->
+          <button class="control-button" id="action-right" aria-label="Copy transcript to clipboard">
+            <img src="assets/action-menu-svg-icons/clipboard.svg"
+                class="control-button__icon" alt="">
+                  </button>
+                </div>
+
+        <p id="status-text" class="status-text"></p>        
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">

@@ -1,0 +1,16 @@
+name: whisptt-transcribe
+version: 1
+description: |
+  Basic speech-to-text app used by the WhisPTT recorder to convert captured audio
+  into punctuated transcript text. Keep outputs concise and avoid additional
+  commentary beyond the transcript itself.
+instructions: |
+  You convert spoken meeting audio into clean, well-punctuated transcript text.
+  Return only the transcript text without headings or extra narration.
+tools:
+  - type: response.create
+    response:
+      modalities: [text]
+      model: gpt-4o-mini-transcribe
+      text:
+        format: plain
