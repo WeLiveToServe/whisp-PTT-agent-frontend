@@ -28,7 +28,7 @@
   </style>
 </head>
 <body>
-  <div class="app-shell">
+  <div class="app-shell app-shell--editor">
     <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo"></header>
 
     <main class="screen">
@@ -47,13 +47,11 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button class="bottom-nav__item" type="button" aria-label="Chat">
-        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Chat" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Chat">`r`n        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Chat" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item" type="button" aria-label="Profile">
-        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Profile">`r`n        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Profile" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item" type="button" aria-label="Recorder">
+      <button class="bottom-nav__item" type="button" aria-label="Recorder" id="nav-recorder">
         <img src="assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Edit Transcript">
@@ -73,6 +71,10 @@
 
       const editor = document.getElementById('transcript-editor');
       const editorMicButton = document.getElementById('edit-button');
+      const navRecorderButton = document.getElementById('nav-recorder');
+      const navAndroidButton = document.getElementById('nav-android');
+      const navChatButton = document.getElementById('nav-chat');
+      const navProfileButton = document.getElementById('nav-profile');
       const STORAGE_KEY = 'whisptt.editorPrefill';
 
       function consumePrefill() {
@@ -119,6 +121,30 @@
         loadLatestTranscript();
       }
 
+      if (navRecorderButton) {
+        navRecorderButton.addEventListener('click', () => {
+          window.location.href = 'html_redline.html';
+        });
+      }
+
+      if (navAndroidButton) {
+        navAndroidButton.addEventListener('click', () => {
+          window.location.href = 'html_android.html';
+        });
+      }
+
+      if (navChatButton) {
+        navChatButton.addEventListener('click', () => {
+          window.location.href = 'html_chat.html';
+        });
+      }
+
+      if (navProfileButton) {
+        navProfileButton.addEventListener('click', () => {
+          window.location.href = 'html_profile.html';
+        });
+      }
+
       if (editorMicButton) {
         editorMicButton.addEventListener('click', () => {
           window.location.href = 'html_redline.html';
@@ -128,5 +154,17 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 

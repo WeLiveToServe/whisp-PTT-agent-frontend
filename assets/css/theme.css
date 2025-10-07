@@ -212,25 +212,19 @@
       color: var(--matrix-red);
     }
 
-    .recording-controls {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      column-gap: 1.2rem;
-      position: absolute;
-      left: 50%;
-      bottom: calc(var(--bottom-nav-height, 70px) + 0.4rem);
-      transform: translateX(-50%);
-    }
+      .recording-controls {
+        display: flex;
+        flex-direction: column;   /* force vertical layout */
+        row-gap: 0.55rem;         /* vertical spacing */
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 50%;
+        bottom: calc(var(--bottom-nav-height, 70px) + 0.4rem);
+        transform: translateX(-50%);
+      }
 
-    .mic-button,
-    .control-button {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: calc(var(--mic-button-size, 68px) * 0.88);
-      height: calc(var(--mic-button-size, 68px) * 0.88);
+    .mic-button,\n    .control-button {\n      position: relative;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      width: var(--mic-button-size, 68px);\n      height: var(--mic-button-size, 68px);
       margin: 0;
       border-radius: 50%;
       border: 2px solid var(--matrix-green);
@@ -258,11 +252,7 @@
       height: 38px;
     }
 
-    .control-button--ghost {
-      display: none;
-    }
-
-
+    
 
     .control-button:hover,
     .control-button:focus-visible {
@@ -418,5 +408,45 @@
       pointer-events: none;
     }
 
+
+    .app-shell--recorder .recording-controls {
+      flex-direction: column;
+      row-gap: 0.55rem;
+    }
+
+    .app-shell--recorder .status-text {
+      position: static;
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      margin-top: 0.15rem;
+      color: rgba(59, 255, 101, 0.8);
+      text-transform: uppercase;
+    }
+
+    .app-shell--recorder .screen,
+    .app-shell--editor .screen {
+      padding-bottom: calc(0.6rem + var(--bottom-nav-height, 70px));
+    }
+
+    .app-shell--recorder .transcription-panel,
+    .app-shell--editor .transcription-panel {
+      padding: 0.75rem 1rem 1.2rem;
+    }
+    .coming-soon-log {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 1.2rem 1.2rem;
+    }
+
+    .coming-soon-message {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      letter-spacing: 0.08em;
+      color: rgba(59, 255, 101, 0.85);
+    }
 
 

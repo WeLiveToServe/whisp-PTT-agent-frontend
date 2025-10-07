@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="assets/css/theme.css">
 </head>
 <body>
-  <div class="app-shell">
+  <div class="app-shell app-shell--recorder">
     <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo"></header>
 
     <main class="screen">
@@ -19,25 +19,23 @@
       </section>
 
       <div class="recording-controls" aria-label="Recording controls">
-        <button class="control-button control-button--ghost" type="button" id="action-left" aria-label="Left action">
+        <button class="control-button" type="button" id="action-left" aria-label="Left action">
           <img src="assets/lower-menu-svg-icons/1. refresh-icon.svg" alt="Placeholder" class="control-button__icon">
         </button>
         <button class="mic-button" type="button" id="mic-button" aria-label="Tap to record">
           <img src="assets/lower-menu-svg-icons/2. mic-icon.svg" alt="Microphone" class="control-button__icon control-button__icon--mic">
         </button>
-        <button class="control-button control-button--ghost" type="button" id="action-right" aria-label="Right action">
+        <button class="control-button" type="button" id="action-right" aria-label="Right action">
           <img src="assets/lower-menu-svg-icons/3.clipboard-icon.svg" alt="Placeholder" class="control-button__icon">
         </button>
-        <p class="status-text" id="status-text">Tap the button to start</p>
+        
       </div>
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button class="bottom-nav__item" type="button" aria-label="Chat">
-        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Chat" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Chat">        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Chat" class="bottom-nav__icon">
       </button>
-      <button class="bottom-nav__item" type="button" aria-label="Profile">
-        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Profile">        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Profile" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Recorder">
         <img src="assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
@@ -73,6 +71,9 @@
       const placeholder = document.getElementById("transcription-placeholder");
       const snippetTimerEl = document.getElementById("snippet-timer");
       const navEditorButton = document.getElementById("nav-editor");
+      const navChatButton = document.getElementById("nav-chat");
+      const navProfileButton = document.getElementById("nav-profile");
+      const navAndroidButton = document.getElementById("nav-android");
       const EDITOR_PREFILL_KEY = "whisptt.editorPrefill";
 
       let isRecording = false;
@@ -475,7 +476,26 @@ function stopLivePolling() {
         });
       }
 
-            async function hydrateHistory() {
+      if (navChatButton) {
+        navChatButton.addEventListener("click", () => {
+          window.location.href = "html_chat.html";
+        });
+      }
+
+      if (navProfileButton) {
+        navProfileButton.addEventListener("click", () => {
+          window.location.href = "html_profile.html";
+        });
+      }
+
+      if (navAndroidButton) {
+        navAndroidButton.dataset.androidNavWired = "true";
+        navAndroidButton.addEventListener("click", () => {
+          window.location.href = "html_android.html";
+        });
+      }
+
+      async function hydrateHistory() {
         try {
           const response = await fetch(`${API_BASE}/api/chits`);
           if (!response.ok) {
@@ -499,12 +519,51 @@ function stopLivePolling() {
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const navEditorButton = document.getElementById('nav-editor');
+      const navAndroidButton = document.getElementById('nav-android');
+      const navChatButton = document.getElementById('nav-chat');
+      const navProfileButton = document.getElementById('nav-profile');
       if (navEditorButton && !navEditorButton.dataset.editorNavWired) {
         navEditorButton.addEventListener('click', function () {
           window.location.href = 'html_editor.html';
+        });
+      }
+      if (navAndroidButton && !navAndroidButton.dataset.androidNavWired) {
+        navAndroidButton.addEventListener('click', function () {
+          window.location.href = 'html_android.html';
+        });
+      }
+      if (navChatButton) {
+        navChatButton.addEventListener('click', function () {
+          window.location.href = 'html_chat.html';
+        });
+      }
+      if (navProfileButton) {
+        navProfileButton.addEventListener('click', function () {
+          window.location.href = 'html_profile.html';
         });
       }
     });
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
