@@ -5,6 +5,16 @@ from typing import Any, Dict, Optional
 
 import yaml
 from agents import Agent, ModelSettings, SQLiteSession
+from openai.types.shared import Reasoning
+
+_REASONING_MODEL_PREFIXES = ("gpt-4.1", "o1", "o3", "o4")
+
+
+def _model_supports_reasoning(model_name: str | None) -> bool:
+    if not model_name:
+        return False
+    normalized = model_name.lower()
+    return any(normalized.startswith(prefix) for prefix in _REASONING_MODEL_PREFIXES)
 
 
 @dataclass
@@ -30,28 +40,40 @@ class AgentConfig:
             if key in self.raw:
                 params[param] = self.raw[key]
 
+        if "model_settings" in self.raw:
+            params["model_settings"] = self.raw["model_settings"]
+
         if "handoffs" in self.raw:
             params["handoffs"] = self.raw["handoffs"]
         if "tools" in self.raw:
             params["tools"] = self.raw["tools"]
 
-        model_settings_kwargs = {}
-        if 'temperature' in self.raw:
-            model_settings_kwargs['temperature'] = self.raw['temperature']
-        if 'max_output_tokens' in self.raw:
-            model_settings_kwargs['max_tokens'] = self.raw['max_output_tokens']
-        if 'verbosity' in self.raw:
-            verbosity_map = {'concise': 'low', 'short': 'low', 'default': 'medium', 'detailed': 'high', 'verbose': 'high'}
-            raw_verbosity = str(self.raw['verbosity']).lower()
-            mapped = verbosity_map.get(raw_verbosity, raw_verbosity)
-            allowed = {'low', 'medium', 'high'}
-            if mapped not in allowed:
-                raise ValueError(f"Unsupported verbosity '{self.raw['verbosity']}'. Use one of {sorted(allowed)} or provide a mappable alias.")
-            model_settings_kwargs['verbosity'] = mapped
-        if 'reasoning' in self.raw:
-            model_settings_kwargs['reasoning'] = self.raw['reasoning']
-        if model_settings_kwargs:
-            params['model_settings'] = ModelSettings(**model_settings_kwargs)
+        if "model_settings" not in params:
+            model_settings_kwargs: Dict[str, Any] = {}
+            if 'temperature' in self.raw:
+                model_settings_kwargs['temperature'] = self.raw['temperature']
+            if 'max_output_tokens' in self.raw:
+                model_settings_kwargs['max_tokens'] = self.raw['max_output_tokens']
+            if 'verbosity' in self.raw:
+                verbosity_map = {'concise': 'low', 'short': 'low', 'default': 'medium', 'detailed': 'high', 'verbose': 'high'}
+                raw_verbosity = str(self.raw['verbosity']).lower()
+                mapped = verbosity_map.get(raw_verbosity, raw_verbosity)
+                allowed = {'low', 'medium', 'high'}
+                if mapped not in allowed:
+                    raise ValueError(f"Unsupported verbosity '{self.raw['verbosity']}'. Use one of {sorted(allowed)} or provide a mappable alias.")
+                model_settings_kwargs['verbosity'] = mapped
+            if 'reasoning' in self.raw and _model_supports_reasoning(self.raw.get("model")):
+                model_settings_kwargs['reasoning'] = self.raw['reasoning']
+            if model_settings_kwargs:
+                params['model_settings'] = ModelSettings(**model_settings_kwargs)
+
+        settings = params.get("model_settings")
+        if isinstance(settings, dict):
+            settings_copy: Dict[str, Any] = dict(settings)
+            reasoning_cfg = settings_copy.get("reasoning")
+            if isinstance(reasoning_cfg, dict):
+                settings_copy["reasoning"] = Reasoning(**reasoning_cfg)
+            params["model_settings"] = ModelSettings(**settings_copy)
 
         return Agent(**params)
 

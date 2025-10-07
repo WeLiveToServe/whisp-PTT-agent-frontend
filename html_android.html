@@ -2,39 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WhisPTT · Money Penny</title>
+  <title>WhisPTT - Android Agent</title>
   <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .transcription-entry__meta {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .transcription-entry--agent .transcription-entry__meta {
+      color: rgba(59, 198, 255, 0.85);
+    }
+
+    .transcription-entry--user .transcription-entry__meta {
+      color: rgba(59, 255, 101, 0.85);
+    }
+
+    .transcription-entry--agent p {
+      color: var(--matrix-blue-soft);
+      white-space: pre-wrap;
+    }
+
+    .transcription-entry--user p {
+      color: var(--matrix-green);
+      white-space: pre-wrap;
+    }
+
+    .transcription-entry--draft {
+      opacity: 0.85;
+    }
+
+    .transcription-draft {
+      min-height: 1.4rem;
+      outline: none;
+      border: 1px dashed rgba(59, 198, 255, 0.25);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      color: var(--matrix-green);
+      font-family: var(--font-terminal);
+      font-size: 0.82rem;
+      line-height: 1.55;
+      letter-spacing: 0.05em;
+      background: rgba(10, 15, 20, 0.35);
+    }
+
+    .transcription-draft:empty::before {
+      content: attr(data-placeholder);
+      color: var(--text-soft);
+    }
+
+    .transcription-draft:focus {
+      border-color: rgba(59, 198, 255, 0.55);
+      box-shadow: 0 0 12px rgba(59, 198, 255, 0.25);
+    }
+
+    .status-text {
+      min-height: 1.2rem;
+    }
+
+    .status-text.info {
+      color: rgba(59, 198, 255, 0.8);
+    }
+
+    .status-text.warn {
+      color: rgba(255, 221, 102, 0.9);
+    }
+  </style>
 </head>
 <body>
-  <div class="app-shell app-shell--construction">
-    <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo"></header>
+  <div class="app-shell app-shell--recorder">
+    <header class="top-banner">
+      <img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo">
+    </header>
 
     <main class="screen">
-      <section class="transcription-panel" aria-label="Money Penny agent console">
+      <section class="transcription-panel" aria-label="Android agent transcript">
         <div class="status-bar">
-          <span class="timer status-bar__timer">MONEY PENNY</span>
+          <span class="timer status-bar__timer" id="snippet-timer">ANDROID AGENT LINK</span>
         </div>
-        <div class="agent-panel" aria-live="polite">
-          <p class="agent-panel__blurb">
-            Paste a job description or high-level notes and Money Penny will help draft custom resume bullets,
-            cover letters, or first-contact emails for potential employers.
-          </p>
-          <label class="agent-panel__label" for="agent-input">Job description / context</label>
-          <textarea id="agent-input" class="agent-textarea" placeholder="Paste the job description or key notes here..."></textarea>
-
-          <label class="agent-panel__label" for="agent-instructions">What do you need?</label>
-          <textarea id="agent-instructions" class="agent-textarea agent-textarea--small" placeholder="e.g. Draft a short cover letter that highlights my product marketing background."></textarea>
-
-          <div class="agent-panel__actions">
-            <button type="button" class="agent-button" id="agent-run">Ask Money Penny</button>
-            <button type="button" class="agent-button agent-button--ghost" id="agent-clear">Clear</button>
-          </div>
-          <p class="agent-status-text" id="agent-status" role="status"></p>
-          <div class="agent-output" id="agent-output">
-            <p class="agent-output__placeholder">Drafts will appear here.</p>
-          </div>
-        </div>
+        <p class="transcription-placeholder" id="transcription-placeholder">Start a chat to see Money Penny reply.</p>
+        <div class="transcription-log" id="transcription-log" aria-live="polite" style="overflow-y:auto; flex:1; min-height:0;"></div>
       </section>
+
+      <div class="recording-controls" aria-label="Android chat controls">
+        <button class="control-button" id="action-left" aria-label="Clear conversation">
+          <svg class="control-button__icon" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M9 11a8.5 8.5 0 0112.6-3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="18 7 24 7 24 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M23 21a8.5 8.5 0 01-12.6 3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="14 25 8 25 8 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <button class="mic-button" id="mic-button" aria-label="Send message">
+          <img src="assets/action-menu-svg-icons/mic-simple.svg" class="control-button__icon control-button__icon--mic" alt="">
+        </button>
+
+        <button class="control-button" id="action-right" aria-label="Copy conversation to clipboard">
+          <svg class="control-button__icon" viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="12" y="9" width="12" height="16" rx="2.5" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 21H8a2 2 0 01-2-2V8a3 3 0 013-3h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <p id="status-text" class="status-text"></p>
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
@@ -59,112 +135,220 @@
   <script>
     (function () {
       const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-        ? "http://127.0.0.1:7000"
-        : (window.API_BASE_URL || "http://127.0.0.1:7000");
+        ? 'http://127.0.0.1:7000'
+        : (window.API_BASE_URL || 'http://127.0.0.1:7000');
 
+      const log = document.getElementById('transcription-log');
+      const placeholder = document.getElementById('transcription-placeholder');
+      const statusText = document.getElementById('status-text');
+      const micButton = document.getElementById('mic-button');
+      const clearButton = document.getElementById('action-left');
+      const copyButton = document.getElementById('action-right');
       const navRecorderButton = document.getElementById('nav-recorder');
       const navEditorButton = document.getElementById('nav-editor');
       const navAndroidButton = document.getElementById('nav-android');
       const navChatButton = document.getElementById('nav-chat');
       const navProfileButton = document.getElementById('nav-profile');
-      const runButton = document.getElementById('agent-run');
-      const clearButton = document.getElementById('agent-clear');
-      const inputField = document.getElementById('agent-input');
-      const instructionField = document.getElementById('agent-instructions');
-      const statusNode = document.getElementById('agent-status');
-      const outputNode = document.getElementById('agent-output');
 
-      const go = (path) => {
-        window.location.href = path;
-      };
+      const conversation = [];
+      let draftInput = null;
+      let isSending = false;
 
-      if (navRecorderButton) {
-        navRecorderButton.addEventListener('click', () => go('html_redline.html'));
-      }
-      if (navEditorButton) {
-        navEditorButton.addEventListener('click', () => go('html_editor.html'));
-      }
-      if (navAndroidButton) {
-        navAndroidButton.addEventListener('click', () => go('html_android.html'));
-      }
-      if (navChatButton) {
-        navChatButton.addEventListener('click', () => go('html_chat.html'));
-      }
-      if (navProfileButton) {
-        navProfileButton.addEventListener('click', () => go('html_profile.html'));
-      }
-
-      const setStatus = (text, tone) => {
-        statusNode.textContent = text || '';
-        statusNode.className = 'agent-status-text';
+      function setStatus(message, tone) {
+        statusText.textContent = message || '';
+        statusText.classList.remove('success', 'error', 'warn', 'info');
         if (tone) {
-          statusNode.classList.add(`agent-status-text--${tone}`);
+          statusText.classList.add(tone);
         }
-      };
+      }
 
-      const renderOutput = (content) => {
-        outputNode.innerHTML = '';
-        if (!content) {
-          const placeholder = document.createElement('p');
-          placeholder.className = 'agent-output__placeholder';
-          placeholder.textContent = 'Drafts will appear here.';
-          outputNode.appendChild(placeholder);
+      function ensureHistoryVisible() {
+        const hasEntries = log.querySelectorAll('.transcription-entry:not(.transcription-entry--draft)').length > 0;
+        if (placeholder) {
+          placeholder.style.display = hasEntries ? 'none' : 'block';
+        }
+      }
+
+      function renderEntry(role, text) {
+        const article = document.createElement('article');
+        article.className = `transcription-entry transcription-entry--${role}`;
+
+        const label = document.createElement('span');
+        label.className = 'transcription-entry__meta';
+        label.textContent = role === 'user' ? 'You' : 'Money Penny';
+
+        const body = document.createElement('p');
+        body.textContent = text;
+
+        article.append(label, body);
+        log.appendChild(article);
+        log.scrollTop = log.scrollHeight;
+
+        conversation.push({ role, text });
+        ensureHistoryVisible();
+      }
+
+      function createDraftInput() {
+        if (draftInput) {
+          return draftInput;
+        }
+        const draftWrapper = document.createElement('article');
+        draftWrapper.className = 'transcription-entry transcription-entry--draft';
+
+        const draft = document.createElement('div');
+        draft.className = 'transcription-draft';
+        draft.contentEditable = 'true';
+        draft.setAttribute('role', 'textbox');
+        draft.setAttribute('aria-label', 'Type your request for Money Penny');
+        draft.dataset.placeholder = 'Type, then press Enter to send. Shift+Enter makes a new line.';
+
+        draft.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendDraftMessage();
+          }
+        });
+
+        draftWrapper.appendChild(draft);
+        log.appendChild(draftWrapper);
+        draftInput = draft;
+        return draftInput;
+      }
+
+      function focusDraft() {
+        const draft = createDraftInput();
+        draft.focus();
+        const selection = window.getSelection();
+        if (selection && draft.firstChild) {
+          selection.collapse(draft, draft.childNodes.length);
+        }
+      }
+
+      function resetDraft() {
+        if (draftInput) {
+          draftInput.textContent = '';
+        }
+      }
+
+      function clearTranscript() {
+        conversation.length = 0;
+        log.innerHTML = '';
+        draftInput = null;
+        ensureHistoryVisible();
+        createDraftInput();
+        focusDraft();
+        setStatus('Conversation cleared.', 'success');
+      }
+
+      async function sendDraftMessage() {
+        if (isSending) {
           return;
         }
-        const paragraph = document.createElement('p');
-        paragraph.className = 'agent-output__body';
-        paragraph.textContent = content.trim();
-        outputNode.appendChild(paragraph);
-        outputNode.scrollTop = 0;
-      };
+        const draft = createDraftInput();
+        const message = draft.textContent.trim();
+        if (!message) {
+          setStatus('Type a message for Money Penny first.', 'warn');
+          return;
+        }
+
+        const previewLines = conversation
+          .concat({ role: 'user', text: message })
+          .map((entry) => `${entry.role === 'user' ? 'User' : 'Agent'}: ${entry.text}`)
+          .join('\n');
+
+        renderEntry('user', message);
+        resetDraft();
+        setStatus('Money Penny is thinking...', 'info');
+        isSending = true;
+
+        try {
+          const response = await fetch(`${API_BASE}/api/agent/moneypenny`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: previewLines }),
+          });
+
+          if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            throw new Error(detail?.detail || `Request failed (${response.status})`);
+          }
+
+          const payload = await response.json();
+          const agentReply = payload.output ? String(payload.output).trim() : 'Money Penny had no response.';
+          renderEntry('agent', agentReply);
+          setStatus('Money Penny replied.', 'success');
+        } catch (error) {
+          console.warn('Money Penny request failed', error);
+          setStatus(error.message || 'Could not reach Money Penny.', 'error');
+        } finally {
+          isSending = false;
+          focusDraft();
+        }
+      }
+
+      async function copyConversation() {
+        if (!conversation.length) {
+          setStatus('Nothing to copy yet.', 'warn');
+          return;
+        }
+        const transcript = conversation
+          .map((entry) => `${entry.role === 'user' ? 'You' : 'Money Penny'}:\n${entry.text}`)
+          .join('\n\n');
+        try {
+          await navigator.clipboard.writeText(transcript);
+          setStatus('Conversation copied to clipboard.', 'success');
+        } catch (error) {
+          console.warn('Copy failed', error);
+          setStatus('Clipboard copy did not work.', 'error');
+        }
+      }
+
+      function wireNavigation(button, target, flagName) {
+        if (!button) {
+          return;
+        }
+        if (flagName && button.dataset[flagName]) {
+          return;
+        }
+        if (flagName) {
+          button.dataset[flagName] = 'true';
+        }
+        button.addEventListener('click', () => {
+          window.location.href = target;
+        });
+      }
+
+      wireNavigation(navRecorderButton, 'html_redline.html', 'recorderNavWired');
+      wireNavigation(navEditorButton, 'html_editor.html', 'editorNavWired');
+      wireNavigation(navAndroidButton, 'html_android.html', 'androidNavWired');
+      wireNavigation(navChatButton, 'html_chat.html');
+      wireNavigation(navProfileButton, 'html_profile.html');
 
       if (clearButton) {
-        clearButton.addEventListener('click', () => {
-          inputField.value = '';
-          instructionField.value = '';
-          renderOutput('');
-          setStatus('');
-          inputField.focus();
-        });
+        clearButton.addEventListener('click', clearTranscript);
       }
 
-      if (runButton) {
-        runButton.addEventListener('click', async () => {
-          const context = inputField.value.trim();
-          const task = instructionField.value.trim() || 'Draft a concise outreach message.';
+      if (copyButton) {
+        copyButton.addEventListener('click', copyConversation);
+      }
 
-          if (!context) {
-            setStatus('Please paste a job description or notes first.', 'warn');
-            inputField.focus();
-            return;
-          }
-
-          setStatus('Asking Money Penny…', 'info');
-          renderOutput('');
-          runButton.disabled = true;
-          try {
-            const response = await fetch(`${API_BASE}/api/agent/moneypenny`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: `${context}\n\nRequest: ${task}` }),
-            });
-            if (!response.ok) {
-              const detail = await response.json().catch(() => ({}));
-              throw new Error(detail?.detail || `Request failed (${response.status})`);
-            }
-            const payload = await response.json();
-            renderOutput(payload.output);
-            setStatus('Draft ready.', 'success');
-          } catch (error) {
-            console.warn('Agent request failed', error);
-            setStatus(String(error.message || error), 'error');
-          } finally {
-            runButton.disabled = false;
+      if (micButton) {
+        micButton.addEventListener('click', () => {
+          const draft = createDraftInput();
+          if (draft.textContent.trim()) {
+            sendDraftMessage();
+          } else {
+            focusDraft();
           }
         });
       }
+
+      ensureHistoryVisible();
+      createDraftInput();
+      focusDraft();
     })();
   </script>
 </body>
 </html>
+
 

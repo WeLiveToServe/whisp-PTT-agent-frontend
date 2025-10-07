@@ -2,28 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WhisPTT Coming Soon</title>
+  <title>WhisPTT Transcript Profile</title>
   <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .editor-textarea {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--matrix-green);
+      font-family: var(--font-terminal);
+      font-size: 0.75rem;
+      line-height: 1.5;
+      letter-spacing: 0.04em;
+      resize: none;
+      outline: none;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      padding: 0;
+    }
+    .editor-textarea::placeholder {
+      color: var(--text-soft);
+    }
+  </style>
 </head>
 <body>
-  <div class="app-shell app-shell--construction">
-    <header class="top-banner"><img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo"></header>
+  <div class="app-shell app-shell--editor">
+    <header class="top-banner">
+      <img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo">
+    </header>
 
     <main class="screen">
-      <section class="transcription-panel" aria-label="Coming soon">
+      <section class="transcription-panel" aria-label="Transcript viewer">
         <div class="status-bar">
-          <span class="timer status-bar__timer">COMING SOON</span>
+          <span class="timer status-bar__timer" id="snippet-timer">00:00.0</span>
         </div>
-        <div class="transcription-log coming-soon-log" aria-live="polite">
-          <p class="coming-soon-message">Profile management and preferences are on the roadmap. Your space will be ready shortly.</p>
-        </div>
+        <textarea
+          id="transcript-editor"
+          class="editor-textarea"
+          placeholder="Transcript will appear here..."
+          readonly
+        ></textarea>
+        <p id="transcription-placeholder" class="transcription-placeholder" style="display:none;">Transcript appears here</p>
+        <div id="transcription-log" class="transcription-log" style="display:none;"></div>
       </section>
 
-      <div class="recording-controls" aria-label="Return to recorder">
-        <button class="mic-button" type="button" id="profile-home-button" aria-label="Back to recorder">
-          <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="control-button__icon control-button__icon--mic">
+      <div class="recording-controls" aria-label="Recording controls">
+        <!-- LEFT - Clear -->
+        <button class="control-button" id="action-left" aria-label="Clear transcript">
+          <svg class="control-button__icon" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M9 11a8.5 8.5 0 0112.6-3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="18 7 24 7 24 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M23 21a8.5 8.5 0 01-12.6 3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="14 25 8 25 8 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- CENTRE - Mic -->
+        <button class="mic-button" id="mic-button" aria-label="Tap to record">
+          <img
+            src="assets/action-menu-svg-icons/mic-simple.svg"
+            class="control-button__icon control-button__icon--mic"
+            alt=""
+          >
+        </button>
+
+        <!-- RIGHT - Copy to clipboard -->
+        <button class="control-button" id="action-right" aria-label="Copy transcript to clipboard">
+          <svg class="control-button__icon" viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="12" y="9" width="12" height="16" rx="2.5" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 21H8a2 2 0 01-2-2V8a3 3 0 013-3h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
       </div>
+
+      <p id="status-text" class="status-text"></p>
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
@@ -47,22 +101,438 @@
 
   <script>
     (function () {
+      const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? 'http://127.0.0.1:7000'
+        : (window.API_BASE_URL || 'http://127.0.0.1:7000');
+
+      const editor = document.getElementById('transcript-editor');
+      const micButton = document.getElementById('mic-button');
+      const bookmarkButton = document.getElementById('action-left');
+      const exportButton = document.getElementById('action-right');
+      const statusText = document.getElementById('status-text');
+      const log = document.getElementById('transcription-log');
+      const placeholder = document.getElementById('transcription-placeholder');
+      const snippetTimerEl = document.getElementById('snippet-timer');
       const navRecorderButton = document.getElementById('nav-recorder');
       const navEditorButton = document.getElementById('nav-editor');
       const navChatButton = document.getElementById('nav-chat');
       const navProfileButton = document.getElementById('nav-profile');
       const navAndroidButton = document.getElementById('nav-android');
-      const homeButton = document.getElementById('profile-home-button');
+      const EDITOR_PREFILL_KEY = 'whisptt.editorPrefill';
 
-      const go = path => { window.location.href = path; };
+      const TIMER_UPDATE_INTERVAL_MS = 100;
+      const TYPEWRITER_TOTAL_CHUNKS = 120;
 
-      if (homeButton) { homeButton.addEventListener('click', () => go('html_redline.html')); }
-      if (navRecorderButton) { navRecorderButton.addEventListener('click', () => go('html_redline.html')); }
-      if (navEditorButton) { navEditorButton.addEventListener('click', () => go('html_editor.html')); }
-      if (navChatButton) { navChatButton.addEventListener('click', () => go('html_chat.html')); }
-      if (navProfileButton) { navProfileButton.addEventListener('click', () => go('html_profile.html')); }
-      if (navAndroidButton) { navAndroidButton.addEventListener('click', () => go('html_android.html')); }
+      let isRecording = false;
+      let stopInFlight = false;
+      let exportInFlight = false;
+      let snippetTimerId = null;
+      let snippetStartTime = null;
+
+      function setStatus(message, tone) {
+        statusText.textContent = message || '';
+        statusText.classList.remove('success', 'error');
+        if (tone) {
+          statusText.classList.add(tone);
+        }
+      }
+
+      function rebuildEditorText() {
+        if (!editor) {
+          return;
+        }
+        const blocks = Array.from(log.querySelectorAll('.transcription-entry p'))
+          .map((node) => node.textContent.trim())
+          .filter(Boolean);
+        editor.value = blocks.join('\n\n');
+        editor.scrollTop = editor.scrollHeight;
+      }
+
+      function ensureHistoryVisible() {
+        const hasEntries = log.childElementCount > 0;
+        if (placeholder) {
+          placeholder.style.display = hasEntries ? 'none' : 'block';
+        }
+        if (!hasEntries) {
+          if (editor) {
+            editor.value = '';
+            editor.scrollTop = 0;
+          }
+          return;
+        }
+        rebuildEditorText();
+      }
+
+      function clearTranscriptionHistory() {
+        while (log.firstChild) {
+          log.removeChild(log.firstChild);
+        }
+        ensureHistoryVisible();
+      }
+
+      function typeOutText(element, content) {
+        element.textContent = '';
+        if (!content) {
+          rebuildEditorText();
+          return;
+        }
+        const chars = Array.from(content);
+        let index = 0;
+        const chunk = Math.max(1, Math.floor(chars.length / TYPEWRITER_TOTAL_CHUNKS));
+
+        function step() {
+          const slice = chars.slice(index, index + chunk).join('');
+          element.textContent += slice;
+          index += chunk;
+          rebuildEditorText();
+          if (index < chars.length) {
+            requestAnimationFrame(step);
+          }
+        }
+
+        requestAnimationFrame(step);
+      }
+
+      function renderEntry(entry, options = {}) {
+        const { scroll = true, animate = true } = options;
+        const identifier = entry.id || entry.audio_path || entry.created_at || '';
+        const existingLast = log.lastElementChild;
+        if (identifier && existingLast) {
+          const existingId = existingLast.dataset.chitId || existingLast.dataset.audioPath || existingLast.dataset.timestamp || '';
+          if (existingId === identifier) {
+            ensureHistoryVisible();
+            return;
+          }
+        }
+
+        const article = document.createElement('article');
+        article.className = 'transcription-entry transcription-entry--new';
+        if (entry.id) {
+          article.dataset.chitId = entry.id;
+        }
+        if (entry.audio_path) {
+          article.dataset.audioPath = entry.audio_path;
+        }
+        article.dataset.timestamp = entry.created_at || new Date().toISOString();
+
+        const text = document.createElement('p');
+        article.appendChild(text);
+
+        log.appendChild(article);
+        ensureHistoryVisible();
+
+        if (animate) {
+          typeOutText(text, entry.transcript || '');
+        } else {
+          text.textContent = entry.transcript || '';
+          rebuildEditorText();
+        }
+
+        if (scroll) {
+          log.scrollTop = log.scrollHeight;
+        }
+      }
+
+      async function exportSession() {
+        if (exportInFlight) {
+          return;
+        }
+        if (isRecording) {
+          setStatus('Stop recording before exporting', 'error');
+          return;
+        }
+
+        exportInFlight = true;
+        exportButton.disabled = true;
+        try {
+          setStatus('Exporting session...');
+          const response = await fetch(`${API_BASE}/api/session/export`, { method: 'POST' });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || 'Export failed');
+          }
+
+          clearTranscriptionHistory();
+          resetSnippetTimer();
+
+          let successMessage = data.export_path ? `Session saved to ${data.export_path}` : 'Session log created';
+          const combined = data.combined_transcript || '';
+          if (combined && navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+              await navigator.clipboard.writeText(combined);
+              successMessage += ' (copied to clipboard)';
+            } catch (clipboardError) {
+              console.warn('Clipboard write failed', clipboardError);
+            }
+          }
+
+          setStatus(successMessage, 'success');
+        } catch (error) {
+          console.error(error);
+          setStatus(error.message || 'Export failed', 'error');
+        } finally {
+          exportInFlight = false;
+          exportButton.disabled = false;
+          ensureHistoryVisible();
+        }
+      }
+
+      function formatTime(ms) {
+        if (!Number.isFinite(ms) || ms < 0) {
+          ms = 0;
+        }
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        const tenths = Math.floor((ms % 1000) / 100);
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`;
+      }
+
+      function startSnippetTimer() {
+        if (snippetTimerId) {
+          clearInterval(snippetTimerId);
+        }
+        snippetStartTime = Date.now();
+        snippetTimerEl.textContent = '00:00.0';
+        snippetTimerId = setInterval(() => {
+          const now = Date.now();
+          snippetTimerEl.textContent = formatTime(now - snippetStartTime);
+        }, TIMER_UPDATE_INTERVAL_MS);
+      }
+
+      function stopSnippetTimer(keepDisplay = false) {
+        if (snippetTimerId) {
+          clearInterval(snippetTimerId);
+          snippetTimerId = null;
+        }
+        if (snippetStartTime) {
+          const duration = Date.now() - snippetStartTime;
+          snippetTimerEl.textContent = keepDisplay ? formatTime(duration) : '00:00.0';
+        }
+        snippetStartTime = null;
+      }
+
+      function resetSnippetTimer() {
+        stopSnippetTimer(false);
+        snippetTimerEl.textContent = '00:00.0';
+      }
+
+      function renderStatusFromBackend() {
+        fetch(`${API_BASE}/api/status`)
+          .then((resp) => resp.ok ? resp.json() : null)
+          .then((data) => {
+            if (data && data.last_error) {
+              setStatus(data.last_error, 'error');
+            }
+          })
+          .catch((error) => {
+            console.warn('Status refresh failed', error);
+          });
+      }
+
+      function enterRecordingState() {
+        isRecording = true;
+        micButton.classList.add('mic-button--recording');
+        micButton.classList.add('mic-button--armed');
+        setStatus('Recording... tap to stop');
+        startSnippetTimer();
+      }
+
+      function exitRecordingState({ resetSnippet = false, statusTone = null, statusMessage = 'Tap the button to start' } = {}) {
+        const wasRecording = isRecording;
+        isRecording = false;
+        micButton.classList.remove('mic-button--recording');
+        micButton.classList.remove('mic-button--armed');
+        if (resetSnippet) {
+          resetSnippetTimer();
+        } else if (wasRecording) {
+          stopSnippetTimer(true);
+        }
+        setStatus(statusMessage, statusTone);
+      }
+
+      async function startRecording() {
+        if (isRecording) {
+          return;
+        }
+
+        enterRecordingState();
+
+        try {
+          const response = await fetch(`${API_BASE}/api/record/start`, { method: 'POST' });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to start recording');
+          }
+        } catch (error) {
+          console.error(error);
+          exitRecordingState({ resetSnippet: true, statusTone: 'error', statusMessage: error.message || 'Could not start recording' });
+          micButton.classList.remove('mic-button--armed');
+        }
+      }
+
+      async function stopRecording() {
+        if (!isRecording || stopInFlight) {
+          return;
+        }
+
+        stopInFlight = true;
+
+        micButton.classList.remove('mic-button--armed');
+        micButton.classList.remove('mic-button--recording');
+        setStatus('Processing transcript...');
+
+        try {
+          const response = await fetch(`${API_BASE}/api/record/stop`, { method: 'POST' });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || 'Recording stop failed');
+          }
+          renderEntry(data);
+          exitRecordingState({ statusTone: 'success', statusMessage: 'Tap the button to start' });
+        } catch (error) {
+          console.error(error);
+          exitRecordingState({ resetSnippet: true, statusTone: 'error', statusMessage: error.message || 'Could not stop recording' });
+          stopInFlight = false;
+          return;
+        }
+
+        renderStatusFromBackend();
+        stopInFlight = false;
+      }
+
+      micButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (stopInFlight) {
+          return;
+        }
+        if (isRecording) {
+          stopRecording();
+        } else {
+          micButton.classList.add('mic-button--armed');
+          startRecording();
+        }
+      });
+
+      bookmarkButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        if (isRecording) {
+          setStatus('Stop recording before clearing', 'error');
+          return;
+        }
+        clearTranscriptionHistory();
+        resetSnippetTimer();
+        setStatus('Transcript cleared', 'success');
+        try {
+          const response = await fetch(`${API_BASE}/api/transcript/clear`, { method: 'POST' });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to clear transcript history');
+          }
+        } catch (error) {
+          console.warn('Transcript clear sync failed', error);
+          setStatus(error.message || 'Could not sync clear action', 'error');
+        }
+      });
+
+      exportButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        exportSession();
+      });
+
+      if (navEditorButton) {
+        navEditorButton.dataset.editorNavWired = 'true';
+        navEditorButton.addEventListener('click', () => {
+          const textForEditor = editor ? editor.value : '';
+          try {
+            sessionStorage.setItem(EDITOR_PREFILL_KEY, JSON.stringify({ text: textForEditor, createdAt: new Date().toISOString() }));
+          } catch (storageError) {
+            console.warn('Failed to cache transcript for editor', storageError);
+          }
+          window.location.href = 'html_editor.html';
+        });
+      }
+
+      if (navRecorderButton) {
+        navRecorderButton.addEventListener('click', () => {
+          window.location.href = 'html_redline.html';
+        });
+      }
+
+      if (navChatButton) {
+        navChatButton.addEventListener('click', () => {
+          window.location.href = 'html_chat.html';
+        });
+      }
+
+      if (navProfileButton) {
+        navProfileButton.addEventListener('click', () => {
+          window.location.href = 'html_profile.html';
+        });
+      }
+
+      if (navAndroidButton) {
+        navAndroidButton.dataset.androidNavWired = 'true';
+        navAndroidButton.addEventListener('click', () => {
+          window.location.href = 'html_android.html';
+        });
+      }
+
+      async function hydrateHistory() {
+        try {
+          const response = await fetch(`${API_BASE}/api/chits`);
+          if (!response.ok) {
+            return;
+          }
+          const records = await response.json();
+          records.forEach((entry) => {
+            renderEntry(entry, { scroll: false, animate: false });
+          });
+          log.scrollTop = log.scrollHeight;
+          ensureHistoryVisible();
+        } catch (error) {
+          console.warn('History hydration failed', error);
+        }
+      }
+
+      hydrateHistory();
+      ensureHistoryVisible();
+      renderStatusFromBackend();
     })();
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const navRecorderButton = document.getElementById('nav-recorder');
+      const navEditorButton = document.getElementById('nav-editor');
+      const navAndroidButton = document.getElementById('nav-android');
+      const navChatButton = document.getElementById('nav-chat');
+      const navProfileButton = document.getElementById('nav-profile');
+      if (navRecorderButton && !navRecorderButton.dataset.recorderNavWired) {
+        navRecorderButton.dataset.recorderNavWired = 'true';
+        navRecorderButton.addEventListener('click', function () {
+          window.location.href = 'html_redline.html';
+        });
+      }
+      if (navEditorButton && !navEditorButton.dataset.editorNavWired) {
+        navEditorButton.addEventListener('click', function () {
+          window.location.href = 'html_editor.html';
+        });
+      }
+      if (navAndroidButton && !navAndroidButton.dataset.androidNavWired) {
+        navAndroidButton.addEventListener('click', function () {
+          window.location.href = 'html_android.html';
+        });
+      }
+      if (navChatButton) {
+        navChatButton.addEventListener('click', function () {
+          window.location.href = 'html_chat.html';
+        });
+      }
+      if (navProfileButton) {
+        navProfileButton.addEventListener('click', function () {
+          window.location.href = 'html_profile.html';
+        });
+      }
+    });
   </script>
 </body>
 </html>

@@ -9,6 +9,7 @@
       --panel-line: rgba(59, 255, 101, 0.35);
       --panel-line-strong: rgba(59, 255, 101, 0.65);
       --text-muted: rgba(59, 255, 101, 0.7);
+      --matrix-blue-soft: rgba(59, 198, 255, 0.85);
       --text-soft: rgba(59, 255, 101, 0.5);
       --nav-bg: #060606;
       --shadow-outer: 0 20px 60px rgba(0, 0, 0, 0.75);
@@ -117,7 +118,8 @@
     .timer {
       font-size: 0.8rem;
       letter-spacing: 0.08em;
-      color: var(--text-muted);
+      color: var(--matrix-blue-soft);
+      text-shadow: 0 0 12px rgba(59, 198, 255, 0.6);
       min-width: 74px;
       text-align: center;
     }
