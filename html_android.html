@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -32,32 +32,63 @@
       white-space: pre-wrap;
     }
 
-    .transcription-entry--draft {
-      opacity: 0.85;
+    .chat-output {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow-y: auto;
+      padding-right: 0.4rem;
     }
 
-    .transcription-draft {
-      min-height: 1.4rem;
+    .chat-output .transcription-placeholder {
+      margin: 0;
+      font-size: 0.8rem;
+      text-align: center;
+      color: var(--text-soft);
+    }
+
+    .chat-output .transcription-log {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 0.75rem;
+    }
+
+    .chat-draft-shell {
+      margin-top: 0.65rem;
+    }
+
+    .chat-draft {
+      min-height: 2.6rem;
+      max-height: 5.6rem;
+      overflow-y: auto;
       outline: none;
-      border: 1px dashed rgba(59, 198, 255, 0.25);
+      border: 1px dashed rgba(59, 198, 255, 0.28);
       border-radius: 10px;
-      padding: 0.65rem 0.85rem;
+      padding: 0.75rem 0.95rem;
       color: var(--matrix-green);
       font-family: var(--font-terminal);
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       line-height: 1.55;
       letter-spacing: 0.05em;
       background: rgba(10, 15, 20, 0.35);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
-    .transcription-draft:empty::before {
+    .chat-draft:empty::before {
       content: attr(data-placeholder);
       color: var(--text-soft);
     }
 
-    .transcription-draft:focus {
+    .chat-draft:focus,
+    .chat-draft.chat-draft--active {
       border-color: rgba(59, 198, 255, 0.55);
-      box-shadow: 0 0 12px rgba(59, 198, 255, 0.25);
+      box-shadow: 0 0 12px rgba(59, 198, 255, 0.35);
+      background: rgba(10, 20, 28, 0.48);
     }
 
     .status-text {
@@ -76,7 +107,7 @@
 <body>
   <div class="app-shell app-shell--recorder">
     <header class="top-banner">
-      <img src="assets/html-logo-images/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo">
+      <img src="assets\ico-png-assets\png-logo-assets\whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo">
     </header>
 
     <main class="screen">
@@ -84,8 +115,20 @@
         <div class="status-bar">
           <span class="timer status-bar__timer" id="snippet-timer">ANDROID AGENT LINK</span>
         </div>
-        <p class="transcription-placeholder" id="transcription-placeholder">Start a chat to see Money Penny reply.</p>
-        <div class="transcription-log" id="transcription-log" aria-live="polite" style="overflow-y:auto; flex:1; min-height:0;"></div>
+        <div class="chat-output" id="chat-output">
+          <p class="transcription-placeholder" id="transcription-placeholder">Start a chat to see Money Penny reply.</p>
+          <div class="transcription-log" id="transcription-log" aria-live="polite"></div>
+        </div>
+        <div class="chat-draft-shell">
+          <div
+            class="chat-draft"
+            id="chat-draft"
+            contenteditable="true"
+            role="textbox"
+            aria-label="Type your request for Money Penny"
+            data-placeholder="Type, then press Enter to send. Shift+Enter makes a new line.">
+          </div>
+        </div>
       </section>
 
       <div class="recording-controls" aria-label="Android chat controls">
@@ -99,7 +142,7 @@
         </button>
 
         <button class="mic-button" id="mic-button" aria-label="Send message">
-          <img src="assets/action-menu-svg-icons/mic-simple.svg" class="control-button__icon control-button__icon--mic" alt="">
+          <img src="assets/svg-assets/action-menu-svg-icons/mic-simple.svg" class="control-button__icon control-button__icon--mic" alt="">
         </button>
 
         <button class="control-button" id="action-right" aria-label="Copy conversation to clipboard">
@@ -114,20 +157,20 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button class="bottom-nav__item" type="button" aria-label="Chat" id="nav-chat">
-        <img src="assets/lower-menu-svg-icons/L2-chat-menu.svg" alt="Chat" class="bottom-nav__icon">
+      <button class="bottom-nav__item" type="button" aria-label="Agents" id="nav-chat">
+        <img src="assets/svg-assets/lower-menu-svg-icons/agent-factory-nav.svg" alt="Agents" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item" type="button" aria-label="Profile" id="nav-profile">
-        <img src="assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
+        <img src="assets/svg-assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item" type="button" aria-label="Recorder" id="nav-recorder">
-        <img src="assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
+        <img src="assets/svg-assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item" type="button" aria-label="Edit Transcript" id="nav-editor">
-        <img src="assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="bottom-nav__icon">
+        <img src="assets/svg-assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="bottom-nav__icon">
       </button>
       <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Android" id="nav-android">
-        <img src="assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="bottom-nav__icon">
+        <img src="assets/svg-assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="bottom-nav__icon">
       </button>
     </nav>
   </div>
@@ -139,6 +182,8 @@
         : (window.API_BASE_URL || 'http://127.0.0.1:7000');
 
       const log = document.getElementById('transcription-log');
+      const chatOutput = document.getElementById('chat-output');
+      const draftInput = document.getElementById('chat-draft');
       const placeholder = document.getElementById('transcription-placeholder');
       const statusText = document.getElementById('status-text');
       const micButton = document.getElementById('mic-button');
@@ -151,7 +196,6 @@
       const navProfileButton = document.getElementById('nav-profile');
 
       const conversation = [];
-      let draftInput = null;
       let isSending = false;
 
       function setStatus(message, tone) {
@@ -163,13 +207,40 @@
       }
 
       function ensureHistoryVisible() {
-        const hasEntries = log.querySelectorAll('.transcription-entry:not(.transcription-entry--draft)').length > 0;
+        const hasEntries = log && log.childElementCount > 0;
         if (placeholder) {
           placeholder.style.display = hasEntries ? 'none' : 'block';
         }
       }
 
+      function focusDraft() {
+        if (!draftInput) {
+          return;
+        }
+        draftInput.focus();
+        draftInput.classList.add('chat-draft--active');
+        const selection = window.getSelection();
+        if (!selection) {
+          return;
+        }
+        selection.removeAllRanges();
+        const range = document.createRange();
+        range.selectNodeContents(draftInput);
+        range.collapse(false);
+        selection.addRange(range);
+      }
+
+      function resetDraft() {
+        if (draftInput) {
+          draftInput.textContent = '';
+          draftInput.classList.remove('chat-draft--active');
+        }
+      }
+
       function renderEntry(role, text) {
+        if (!log) {
+          return;
+        }
         const article = document.createElement('article');
         article.className = `transcription-entry transcription-entry--${role}`;
 
@@ -182,70 +253,34 @@
 
         article.append(label, body);
         log.appendChild(article);
-        log.scrollTop = log.scrollHeight;
 
         conversation.push({ role, text });
         ensureHistoryVisible();
-      }
 
-      function createDraftInput() {
-        if (draftInput) {
-          return draftInput;
-        }
-        const draftWrapper = document.createElement('article');
-        draftWrapper.className = 'transcription-entry transcription-entry--draft';
-
-        const draft = document.createElement('div');
-        draft.className = 'transcription-draft';
-        draft.contentEditable = 'true';
-        draft.setAttribute('role', 'textbox');
-        draft.setAttribute('aria-label', 'Type your request for Money Penny');
-        draft.dataset.placeholder = 'Type, then press Enter to send. Shift+Enter makes a new line.';
-
-        draft.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            sendDraftMessage();
-          }
-        });
-
-        draftWrapper.appendChild(draft);
-        log.appendChild(draftWrapper);
-        draftInput = draft;
-        return draftInput;
-      }
-
-      function focusDraft() {
-        const draft = createDraftInput();
-        draft.focus();
-        const selection = window.getSelection();
-        if (selection && draft.firstChild) {
-          selection.collapse(draft, draft.childNodes.length);
-        }
-      }
-
-      function resetDraft() {
-        if (draftInput) {
-          draftInput.textContent = '';
+        if (chatOutput) {
+          chatOutput.scrollTop = chatOutput.scrollHeight;
         }
       }
 
       function clearTranscript() {
         conversation.length = 0;
-        log.innerHTML = '';
-        draftInput = null;
+        if (log) {
+          log.innerHTML = '';
+        }
         ensureHistoryVisible();
-        createDraftInput();
-        focusDraft();
+        resetDraft();
         setStatus('Conversation cleared.', 'success');
+        if (chatOutput) {
+          chatOutput.scrollTop = 0;
+        }
+        focusDraft();
       }
 
       async function sendDraftMessage() {
         if (isSending) {
           return;
         }
-        const draft = createDraftInput();
-        const message = draft.textContent.trim();
+        const message = (draftInput?.textContent || '').trim();
         if (!message) {
           setStatus('Type a message for Money Penny first.', 'warn');
           return;
@@ -332,10 +367,34 @@
         copyButton.addEventListener('click', copyConversation);
       }
 
+      if (draftInput) {
+        draftInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendDraftMessage();
+          }
+        });
+        draftInput.addEventListener('input', () => {
+          if (draftInput.textContent.trim()) {
+            draftInput.classList.add('chat-draft--active');
+          } else {
+            draftInput.classList.remove('chat-draft--active');
+          }
+        });
+        draftInput.addEventListener('focus', () => {
+          draftInput.classList.add('chat-draft--active');
+        });
+        draftInput.addEventListener('blur', () => {
+          if (!draftInput.textContent.trim()) {
+            draftInput.classList.remove('chat-draft--active');
+          }
+        });
+      }
+
       if (micButton) {
         micButton.addEventListener('click', () => {
-          const draft = createDraftInput();
-          if (draft.textContent.trim()) {
+          const message = (draftInput?.textContent || '').trim();
+          if (message) {
             sendDraftMessage();
           } else {
             focusDraft();
@@ -344,11 +403,17 @@
       }
 
       ensureHistoryVisible();
-      createDraftInput();
       focusDraft();
     })();
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
