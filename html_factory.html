@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WhisPTT - Agent Factory</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <style>
+    .factory-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, minmax(96px, 1fr));
+      gap: 1rem;
+      padding: 0.5rem 0.35rem 0.7rem;
+      overflow-y: auto;
+    }
+
+    .factory-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--panel-line);
+      border-radius: 14px;
+      background: rgba(8, 17, 8, 0.55);
+      box-shadow: inset 0 0 14px rgba(59, 255, 101, 0.08);
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+      min-height: 96px;
+      padding: 0.65rem;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .factory-cell:hover,
+    .factory-cell:focus-visible {
+      outline: none;
+      border-color: var(--panel-line-strong);
+      box-shadow: 0 0 12px rgba(59, 255, 101, 0.25), inset 0 0 16px rgba(59, 255, 101, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .factory-cell:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 0 18px rgba(59, 255, 101, 0.16);
+    }
+
+    .factory-cell svg,
+    .factory-cell img {
+      width: 54px;
+      height: 54px;
+      color: var(--matrix-green);
+      filter: drop-shadow(0 0 10px rgba(59, 255, 101, 0.35));
+      margin-bottom: 0.45rem;
+      pointer-events: none;
+    }
+
+    .factory-label {
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell app-shell--recorder">
+    <header class="top-banner">
+      <img src="assets/ico-png-assets/png-logo-assets/whisptt-logo-corners-tinted.png" alt="WhisPTT logo" class="top-banner__logo">
+    </header>
+
+    <main class="screen">
+      <section class="transcription-panel" aria-label="Agent factory directory">
+        <div class="status-bar">
+          <span class="timer status-bar__timer">AGENT FACTORY</span>
+        </div>
+
+        <div class="factory-grid" role="grid" aria-label="Agent templates">
+          <button class="factory-cell" role="gridcell" aria-label="Resume Builder">
+            <img src="assets/svg-assets/html-icons/bookmark-icon.svg" alt="">
+            <span class="factory-label">Resume Builder</span>
+          </button>
+          <button class="factory-cell" role="gridcell" aria-label="Interview Coach">
+            <img src="assets/svg-assets/html-icons/pencil-neon.svg" alt="">
+            <span class="factory-label">Interview Coach</span>
+          </button>
+          <button class="factory-cell" role="gridcell" aria-label="Sales Pitch">
+            <img src="assets/svg-assets/html-icons/export-icon.svg" alt="">
+            <span class="factory-label">Sales Pitch</span>
+          </button>
+          <button class="factory-cell" role="gridcell" aria-label="Meeting Notes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="factory-label">Meeting Notes</span>
+          </button>
+          <button class="factory-cell" role="gridcell" aria-label="Research Buddy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span class="factory-label">Research Buddy</span>
+          </button>
+          <button class="factory-cell" role="gridcell" aria-label="Coming Soon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16h.01"/>
+              <path d="M12 8v4"/>
+            </svg>
+            <span class="factory-label">Coming Soon</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="bottom-nav__item bottom-nav__item--active" type="button" aria-label="Agents" id="nav-chat">
+        <img src="assets/svg-assets/lower-menu-svg-icons/agent-factory-nav.svg" alt="Agents" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Profile" id="nav-profile">
+        <img src="assets/svg-assets/lower-menu-svg-icons/L1-profile-page-menu.svg" alt="Profile" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Recorder" id="nav-recorder">
+        <img src="assets/svg-assets/lower-menu-svg-icons/C-mic-center-menu.svg" alt="Recorder" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Edit Transcript" id="nav-editor">
+        <img src="assets/svg-assets/lower-menu-svg-icons/R1-edit-transcript-menu.svg" alt="Edit Transcript" class="bottom-nav__icon">
+      </button>
+      <button class="bottom-nav__item" type="button" aria-label="Android" id="nav-android">
+        <img src="assets/svg-assets/lower-menu-svg-icons/R2-android-menu.svg" alt="Android" class="bottom-nav__icon">
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+      const navRecorderButton = document.getElementById('nav-recorder');
+      const navEditorButton = document.getElementById('nav-editor');
+      const navAgentsButton = document.getElementById('nav-chat');
+      const navProfileButton = document.getElementById('nav-profile');
+      const navAndroidButton = document.getElementById('nav-android');
+
+      const go = (path) => { window.location.href = path; };
+
+      if (navRecorderButton) { navRecorderButton.addEventListener('click', () => go('html_redline.html')); }
+      if (navEditorButton) { navEditorButton.addEventListener('click', () => go('html_editor.html')); }
+      if (navProfileButton) { navProfileButton.addEventListener('click', () => go('html_profile.html')); }
+      if (navAndroidButton) { navAndroidButton.addEventListener('click', () => go('html_android.html')); }
+      if (navAgentsButton) {
+        navAgentsButton.addEventListener('click', (event) => {
+          event.preventDefault();
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
