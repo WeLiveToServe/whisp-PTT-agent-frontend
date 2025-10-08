@@ -1,39 +1,100 @@
-# Whisp PTT Agent Frontend Snapshot
+# Whisp PTT Agent Frontend
 
 ## Project Snapshot
-The application has grown from a prototype push-to-talk transcription client into a coordinated stack that now includes a recorder/transcriber loop, a web front end, a test harness, and an emerging agent microservice. Audio capture is handled locally, converted to text through the existing transcription wrappers, and rendered in the single-page HTML UI. A FastAPI-based agent runner (`agent-psmith.py`) sits beside the core web workflow so that transcript strings can soon be routed through OpenAI's Agents SDK for summarisation and follow-on actions. Continuous verification is provided by an automated workflow test that drives the HTTP server, mocks the hardware layers, and leaves a reproducible artefact in the `sessions/` directory.
+This started as a simple push-to-talk transcription client and has grown into a little stack of its own. The goal is for users (aka me) to be able to work with agents via voice, but with pitstop through transcription. Typing out appropriate prompts is a PITA on the go and interactive voice leads to distracted run on prompts and frustrating back and forths. A waste of time and tokens. Right now it includes:
 
-## Directory Structure
-- `.vscode/` - editor tasks and launch settings for local development.
-- `assets/` - static web assets including the matrix theme, icons, and the refreshed tinted logo.
-- `bug-log-noncritical/` - scratchpad for low priority issues discovered during exploratory testing.
-- `front-end-designs/` - archived HTML/CSS iterations and design references.
-- `project-notes-errata/` - research notes and historical experiments retained for context.
-- `sessions/` - runtime exports (transcripts, logs, audio placeholders) plus the agent SQLite memory store.
-- `tests/` - automated workflow verification scripts driven by Python's `unittest` runner.
-- root files - operational source (`recorder_redline.py`, `transcripter_redline.py`, `ui.py`, `whisp_server_redline.py`), agent tooling, configs, and project documentation.
+- A recorder / transcriber loop
+- A FastAPI server
+- A browser frontend (HTML/CSS)
+- A legacy CLI UI
+- An early “agent” microservice
 
-## Key Modules
-- `recorder_redline.py` / `recorder_latest.py` - sounddevice-based push-to-talk loop that streams microphone frames into WAV snippets while mirroring status back to the CLI indicator.
-- `transcripter_redline.py` / `transcripter_latest.py` - synchronous wrapper that now prefers the OpenAI App SDK for transcription (falling back to Whisper), writes session logs, and exposes stubbed live-transcription helpers.
-- `ui.py` - legacy terminal UI utilities (spinner, timers, prompts) that remain in use by the recorder threads and tests.
-- `whisp_server_redline.py` - threading HTTP bridge exposing `/api/record/start`, `/api/record/stop`, `/api/status`, and `/api/session/export`, with SQLite-backed memory, OpenAI-friendly timestamps, and a transcript store.
-- `agent_factory.py` - YAML-driven agent registry that normalises verbosity/temperature settings into `ModelSettings`, materialises `Agent` instances, and provisions `SQLiteSession` handles for multi-turn memory.
-- `agent-psmith.py` - CLI + FastAPI microservice for running agents; supports single-run mode, interactive REPL (`chat`), and a `/run` HTTP endpoint.
+The loop is: record audio → transcribe with OpenAI → show in UI → (soon) pass into agents for responses.
 
-## Configuration Notes
-- Set `OPENAI_API_KEY` to authenticate all OpenAI SDK calls.
-- Optionally provide `WHISP_TRANSCRIBE_APP_ID` (and, if desired, `WHISP_TRANSCRIBE_APP_INSTRUCTIONS`) to route transcription through an OpenAI App. When the variable is absent the code falls back to Whisper-1.
-- Use `WHISP_TRANSCRIBE_APP_REQUIRED=true` to disable the Whisper fallback so that misconfiguration fails fast during deployment.
-- Set `WHISP_REALTIME_MODEL` (for example `gpt-4o-mini-realtime-preview`) to stream audio over a single Realtime session. You can override `WHISP_REALTIME_SAMPLE_RATE` (default 24000) and `WHISP_REALTIME_INSTRUCTIONS` for advanced tuning. Install the optional `websockets` dependency so the realtime client can connect.
+*(Recording is now toggled by clicking the mic icon, not the spacebar. Still not cleaned up in the code for naming/commenting... sorry!)*
 
-## Progress Since `codex-handoff.md`
-- Achieved: HTML theme extracted into dedicated CSS, button duplication bug eliminated, recorder MP3 conversion removed to reduce latency, backend logging standardised, and the new agent microservice with configuration registry and automated workflow test are in place. The UI now uses bundled SVG assets and provides visible export artefacts for testing.
-- Discarded: Real-time streaming transcription and CLI flow wiring for finish options remain on ice; guardrail placeholders are not enforced yet, and no persistence outside transient logs is attempted.
-- Unfinished: Wiring the web UI to the agent service, enabling true streaming Whisper output, strengthening guardrail integration, and finalising keyboard gesture polish are still outstanding.
+---
 
-## Suggested Next Steps
-The immediate priority should be end-to-end integration between the browser front end and `agent-psmith.py`. By adding a `/api/agents/run` bridge in `whisp_server_redline.py` (or proxying directly to the FastAPI service) the "Agents" button can deliver transcripts to the configured agent, play back the response in the log, and optionally capture the result in the export history. This would validate the agent stack under realistic load and surface any requirements for result formatting, error handling, or session management before we scale beyond the P. Smith persona.
+## How It’s Put Together
 
-Once that loop is functional, I recommend focusing on resilience and developer ergonomics. Introducing structured guardrails (input length validation, output sanitisation) will make the agent responses safe to surface automatically. Expanding the workflow test suite to cover the new agent endpoint, refactoring recorder/transcriber modules into importable packages, and trimming legacy globals will keep the codebase healthy as we add more agents. With those foundations in place, we can revisit real-time transcription and polished gesture controls with confidence that the backend architecture will sustain them.
+### Recorder (`recorder_redline.py`)
+Captures audio to WAV files when you hit record. Originally keypress-based, but now controlled from the browser UI. Keeps sessions under `/sessions/`.
 
+### Transcriber (`transcripter_redline.py`)
+Sends audio to OpenAI. Prefers `gpt-4o-transcribe` (or `-mini`), falls back to `whisper-1`. Can log transcripts, handle prompts, and has some stubbed “live” streaming helpers.
+
+### Server (`device_server.py`)
+FastAPI service that coordinates recording and transcription. Exposes routes like:
+- `/api/record/start`
+- `/api/record/stop`
+- `/api/status`
+- `/api/session/export`
+
+Stores transcripts and lightweight session memory in SQLite.
+
+### UI
+- **CLI (`ui.py`)**: old-school Rich console widgets (spinners, banners).  
+- **Web (`html_*.html` + `theme.css`)**: recorder page, transcript editor, agent factory, profile/export, Android-style chat window. Theme lives in CSS with a “matrix green” look.
+
+### Agents
+- **`agent_factory.py`**: registry + config loader for agent personas.  
+- **`agent-psmith.py`**: FastAPI microservice. Can run one-off, interactive REPL, or serve at `/run`.
+
+---
+
+## Config & Setup
+
+- Set `OPENAI_API_KEY` in your env.  
+- Optional env vars:  
+  - `WHISP_TRANSCRIBE_APP_ID` and `WHISP_TRANSCRIBE_APP_INSTRUCTIONS` if using OpenAI Apps.  
+  - `WHISP_TRANSCRIBE_APP_REQUIRED=true` to force App usage (disable Whisper fallback).  
+  - `WHISP_REALTIME_MODEL` (ex: `gpt-4o-mini-realtime-preview`), plus sample rate + instructions. Needs `websockets` installed for live mode.  
+
+Dependencies: `fastapi`, `sounddevice`, `soundfile`, `rich`, `openai`, `uvicorn`.
+
+---
+
+## What Works Today
+
+- Record via browser UI, transcribe via OpenAI.  
+- Local sessions with transcripts, logs, and WAVs in `/sessions/`.  
+- Browser frontend: recorder, transcript editor, agent factory, profile/export, Android-style chat.  
+- CLI utilities for quick testing.  
+- Agent microservice with YAML registry + SQLite memory.  
+- Automated workflow test that drives the server and logs outputs.
+
+---
+
+## What’s Still Rough
+
+- Real-time streaming transcription: unstable, repeats/dupes.  
+- Guardrails: placeholders exist, but no enforcement yet.  
+- Persistence: only logs and SQLite session memory, no long-term storage.  
+- Code comments: recorder still talks about “keypress” when it’s actually icon click.
+
+---
+
+## Roadmap
+
+1. Wire the browser frontend to the agent service (`/api/agents/run`). Let the “Agents” button send transcripts through an agent and show the result in the log/export.  
+2. Add guardrails (input length checks, output sanitization).  
+3. Expand workflow tests to cover agents.  
+4. Refactor recorder/transcriber into importable packages.  
+5. Polish gesture/UX once backend is sturdier.  
+6. Revisit real-time transcription once core loop is solid.
+
+---
+
+## Repo Layout (highlights)
+
+- `recorder_redline.py`, `transcripter_redline.py`, `device_server.py`, `ui.py` — main Python code.  
+- `html_*.html`, `theme.css`, `assets/` — web UI.  
+- `agent_factory.py`, `agent-psmith.py` — agent stuff.  
+- `sessions/` — transcripts, logs, audio.  
+- `tests/` — workflow tests.  
+- `project-notes-errata/`, `front-end-designs/` — scratch / archived designs.  
+
+---
+
+## Status
+It’s functional but in flux. The goal is an end-to-end loop: speak → see transcript → push into agent → get response. Right now, the first two parts are working reliably, the rest are coming together.
