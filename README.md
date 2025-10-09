@@ -1,7 +1,8 @@
 # Whisp PTT Agent Frontend
 
 ## Project Snapshot
-This started as a simple push-to-talk transcription client and has grown into a little stack of its own. The goal is for users (aka me) to be able to work with agents via voice, but with pitstop through transcription. Typing out appropriate prompts is a PITA on the go and interactive voice leads to distracted run on prompts and frustrating back and forths. A waste of time and tokens. Right now it includes:
+This started as a simple push-to-talk transcription client and has grown into a little stack of its own. The goal is for users (aka me) to be able to work with agents via voice, but with pitstop through transcription. Typing out appropriate prompts is a PITA on the go and interactive voice leads to distracted run on prompts and frustrating back and forths. A waste of time and tokens. 
+Right now it includes:
 
 - A recorder / transcriber loop
 - A FastAPI server
